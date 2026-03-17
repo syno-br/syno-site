@@ -167,7 +167,9 @@
       transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
       z-index: 0;
     }
-    .gs-btn:hover::before { transform: translateX(0); }
+    @media (hover: hover) {
+      .gs-btn:hover::before { transform: translateX(0); }
+    }
     .gs-btn__arrow {
       display: block;
       flex-shrink: 0;
@@ -175,7 +177,9 @@
       position: relative; z-index: 1;
       transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .gs-btn:hover .gs-btn__arrow { transform: rotate(180deg); }
+    @media (hover: hover) {
+      .gs-btn:hover .gs-btn__arrow { transform: rotate(180deg); }
+    }
     .gs-btn__label { position: relative; z-index: 1; }
 
     /* ── BUTTON ANIMATED BORDER WRAP ── */
@@ -2242,11 +2246,15 @@ window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY
       el.classList.add('is-visible');
 
       // Após a animação: remove .fade-up para restaurar transitions de hover dos cards
-      el.addEventListener('transitionend', (e) => {
+      // Não usa { once: true } para evitar bug: se transitionend disparar por outra propriedade
+      // primeiro, o listener seria removido antes de tratar opacity/transform/filter.
+      function cleanup(e) {
         if (e.propertyName !== 'opacity' && e.propertyName !== 'transform' && e.propertyName !== 'filter') return;
+        el.removeEventListener('transitionend', cleanup);
         el.style.transitionDelay = '';
-        el.classList.remove('fade-up', 'is-visible'); // limpa — elemento já está visível pelo padrão CSS
-      }, { once: true });
+        el.classList.remove('fade-up', 'is-visible');
+      }
+      el.addEventListener('transitionend', cleanup);
 
       // Cada elemento é observado apenas uma vez
       observer.unobserve(el);
@@ -2256,8 +2264,31 @@ window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY
     rootMargin: OFFSET,
   });
 
-  // Observa todos os elementos .fade-up na página
-  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+  // Observa todos os elementos .fade-up na página, exceto #impactPhrase (observer próprio)
+  document.querySelectorAll('.fade-up').forEach(el => {
+    if (el.id !== 'impactPhrase') observer.observe(el);
+  });
+
+  // Observer dedicado para #impactPhrase: sem stagger, dispara quando 25% está visível
+  const impactEl = document.getElementById('impactPhrase');
+  if (impactEl) {
+    const impactObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        e.target.style.transitionDelay = '0s';
+        e.target.classList.add('is-visible');
+        function impactCleanup(ev) {
+          if (ev.propertyName !== 'opacity' && ev.propertyName !== 'transform' && ev.propertyName !== 'filter') return;
+          e.target.removeEventListener('transitionend', impactCleanup);
+          e.target.style.transitionDelay = '';
+          e.target.classList.remove('fade-up', 'is-visible');
+        }
+        e.target.addEventListener('transitionend', impactCleanup);
+        impactObs.unobserve(e.target);
+      });
+    }, { threshold: 0.25, rootMargin: '0px' });
+    impactObs.observe(impactEl);
+  }
 })();
 
 // ── SPOTLIGHT TRIGGER ───────────────────────
