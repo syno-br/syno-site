@@ -1991,7 +1991,7 @@
         </p>
         <p style="color:rgba(255,255,255,0.4);font-size:13px;margin:0 0 12px;">Ainda ficou com alguma dúvida?</p>
         <div class="gs-btn-wrap">
-          <a href="#" class="gs-btn gs-btn--sm" onclick="if(confirm('Deseja iniciar uma conversa no WhatsApp?')){window.open('https://wa.me/5511999999999','_blank');}return false;">
+          <a href="https://wa.me/5511923656154" target="_blank" rel="noopener" class="gs-btn gs-btn--sm">
             <svg class="gs-btn__arrow" width="36" height="36" viewBox="0 0 48 48" fill="none">
               <rect width="48" height="48" rx="24" fill="url(#seta-grad-faq)"/>
               <path d="M20.5 17L27.5 24L20.5 31" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -2286,7 +2286,7 @@ window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY
         e.target.addEventListener('transitionend', impactCleanup);
         impactObs.unobserve(e.target);
       });
-    }, { threshold: 0.25, rootMargin: '0px' });
+    }, { threshold: 0.05, rootMargin: '0px 0px 0px 0px' });
     impactObs.observe(impactEl);
   }
 })();
@@ -2378,6 +2378,7 @@ function switchTab(idx) {
   const sec   = document.getElementById('heroSection');
   const stars = document.getElementById('heroStars');
   if (!sec || !stars) return;
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
   let sx=0, sy=0, tx=0, ty=0;
 
@@ -2628,21 +2629,23 @@ function switchTab(idx) {
     requestAnimationFrame(draw);
   }
 
-  window.addEventListener('mousemove', e => {
-    if (window.innerWidth <= 768) return; // static on mobile
-    const heroEl = document.getElementById('heroSection');
-    if (!heroEl) return;
-    const rect = heroEl.getBoundingClientRect();
-    const cx = rect.left + rect.width  / 2;
-    const cy = rect.top  + rect.height / 2;
-    // Lerp for smooth follow
-    mouseX = e.clientX - cx;
-    mouseY = e.clientY - cy;
-  });
+  const isTouch = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  if (!isTouch) {
+    window.addEventListener('mousemove', e => {
+      const heroEl = document.getElementById('heroSection');
+      if (!heroEl) return;
+      const rect = heroEl.getBoundingClientRect();
+      mouseX = e.clientX - (rect.left + rect.width  / 2);
+      mouseY = e.clientY - (rect.top  + rect.height / 2);
+    });
+  }
 
   function lerpOffset() {
-    offsetX += (mouseX - offsetX) * 0.06;
-    offsetY += (mouseY - offsetY) * 0.06;
+    if (!isTouch) {
+      offsetX += (mouseX - offsetX) * 0.06;
+      offsetY += (mouseY - offsetY) * 0.06;
+    }
     setTimeout(lerpOffset, 16);
   }
 
