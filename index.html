@@ -2269,26 +2269,27 @@ window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY
     if (el.id !== 'impactPhrase') observer.observe(el);
   });
 
-  // Observer dedicado para #impactPhrase: sem stagger, dispara quando 25% está visível
-  const impactEl = document.getElementById('impactPhrase');
-  if (impactEl) {
-    const impactObs = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (!e.isIntersecting) return;
-        e.target.style.transitionDelay = '0s';
-        e.target.classList.add('is-visible');
-        function impactCleanup(ev) {
-          if (ev.propertyName !== 'opacity' && ev.propertyName !== 'transform' && ev.propertyName !== 'filter') return;
-          e.target.removeEventListener('transitionend', impactCleanup);
-          e.target.style.transitionDelay = '';
-          e.target.classList.remove('fade-up', 'is-visible');
-        }
-        e.target.addEventListener('transitionend', impactCleanup);
-        impactObs.unobserve(e.target);
-      });
-    }, { threshold: 0.05, rootMargin: '0px 0px 0px 0px' });
-    impactObs.observe(impactEl);
-  }
+  // #impactPhrase — scroll listener direto, sem stagger, sem IntersectionObserver
+  // Mais confiável em mobile onde o IntersectionObserver tem comportamento inconsistente
+  (function () {
+    const el = document.getElementById('impactPhrase');
+    if (!el) return;
+    function tryReveal() {
+      if (!el.classList.contains('fade-up')) return; // já animou
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.92) {
+        el.style.transitionDelay = '0s';
+        el.classList.add('is-visible');
+        setTimeout(() => {
+          el.style.transitionDelay = '';
+          el.classList.remove('fade-up', 'is-visible');
+        }, 900);
+        window.removeEventListener('scroll', tryReveal);
+      }
+    }
+    window.addEventListener('scroll', tryReveal, { passive: true });
+    tryReveal(); // verifica na carga caso já esteja visível
+  })();
 })();
 
 // ── SPOTLIGHT TRIGGER ───────────────────────
@@ -2649,8 +2650,15 @@ function switchTab(idx) {
     setTimeout(lerpOffset, 16);
   }
 
-  window.addEventListener('resize', () => { resize(); init(); });
+  let prevWidth = 0;
+  window.addEventListener('resize', () => {
+    resize();
+    // No iOS a barra de endereço escondendo/aparecendo dispara resize sem mudar a largura —
+    // reinicializar estrelas nesse caso causa "pulo" visual. Só reinicializa se largura mudou.
+    if (sc.offsetWidth !== prevWidth) { prevWidth = sc.offsetWidth; init(); }
+  });
   resize();
+  prevWidth = sc.offsetWidth;
   init();
   draw();
   lerpOffset();
