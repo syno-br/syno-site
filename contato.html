@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fale com a SYNO</title>
+  <link rel="icon" type="image/png" href="brand_assets/LOGO APENAS SÍMBOLO.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #7C3AED;
+      --primary-light: #C4B5FD;
+      --primary-dark: #4C1D95;
+      --black: #0d0d0d;
+      --fill: #101523;
+      --stroke: #1e222e;
+      --gray: #b9b7bb;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--black);
+      color: var(--white);
+      font-family: 'Inter Tight', sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      cursor: none;
+      min-height: 100vh;
+    }
+
+    /* ── CURSOR ── */
+    .cursor-dot {
+      width: 8px; height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+      position: fixed; pointer-events: none;
+      z-index: 9999; transform: translate(-50%, -50%);
+    }
+    .cursor-ring {
+      width: 32px; height: 32px;
+      border: 1.5px solid rgba(124,58,237,0.6);
+      border-radius: 50%;
+      position: fixed; pointer-events: none;
+      z-index: 9998; transform: translate(-50%, -50%);
+      transition: width .3s ease, height .3s ease, border-color .3s ease;
+    }
+    .cursor-ring.hover { width: 52px; height: 52px; border-color: var(--primary); }
+
+    /* ── TYPOGRAPHY ── */
+    .gradient-text {
+      background: linear-gradient(135deg, #C4B5FD 0%, #7C3AED 60%, #4C1D95 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+
+    /* ── HEADER ── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(13,13,13,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--stroke);
+    }
+    header .container {
+      max-width: 100%;
+      padding: 0 32px;
+    }
+    .header-inner {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--gray); text-decoration: none;
+      font-size: 14px; font-weight: 500;
+      transition: color .2s ease;
+    }
+    .back-link:hover { color: var(--white); }
+    .back-link svg { transition: transform .2s ease; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    /* ── FADE-UP ── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(30px);
+      filter: blur(4px);
+      transition:
+        opacity   0.7s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+        filter    0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .fade-up.is-visible {
+      opacity: 1; transform: translateY(0); filter: blur(0);
+    }
+
+    /* ── PAGE WRAPPER ── */
+    .page {
+      min-height: 100vh;
+      padding: 72px 0 0;
+      display: flex;
+      align-items: stretch;
+      position: relative;
+    }
+
+    /* Background glow */
+    .page-glow {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 50% at 0% 30%, rgba(124,58,237,0.1) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 100% 70%, rgba(76,29,149,0.08) 0%, transparent 55%);
+    }
+
+    /* ── TWO-COLUMN LAYOUT ── */
+    .page-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 72px);
+      width: 100%;
+      position: relative;
+      z-index: 1;
+      align-items: start;
+    }
+
+    /* LEFT: info panel */
+    .info-panel {
+      padding: 48px 64px 80px 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      border-right: 1px solid var(--stroke);
+      position: sticky;
+      top: 72px;
+      max-height: calc(100vh - 72px);
+      overflow: hidden;
+    }
+    .info-panel::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent 0%, rgba(124,58,237,0.4) 30%, rgba(124,58,237,0.4) 70%, transparent 100%);
+    }
+
+    .label-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(124,58,237,0.1);
+      border: 1px solid rgba(124,58,237,0.3);
+      color: var(--primary-light);
+      padding: 6px 16px; border-radius: 100px;
+      font-size: 13px; font-weight: 500;
+      margin-bottom: 28px;
+      width: fit-content;
+    }
+
+    .info-heading {
+      font-size: clamp(32px, 3.2vw, 50px);
+      font-weight: 700;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+
+    .info-sub {
+      color: var(--gray);
+      font-size: 17px;
+      line-height: 1.75;
+      margin-bottom: 48px;
+      max-width: 420px;
+    }
+
+    /* Trust items */
+    .trust-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+    .trust-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .trust-icon {
+      width: 36px; height: 36px;
+      background: rgba(124,58,237,0.12);
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .trust-icon svg { color: var(--primary-light); }
+    .trust-text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 2px;
+    }
+    .trust-text span {
+      font-size: 13px;
+      color: var(--gray);
+      line-height: 1.5;
+    }
+
+    /* Divider */
+    .info-divider {
+      height: 1px;
+      background: var(--stroke);
+      margin-bottom: 28px;
+    }
+
+    .contact-links {
+      display: flex; flex-direction: row; gap: 28px;
+    }
+    .contact-link {
+      display: flex; align-items: center; gap: 7px;
+      text-decoration: none;
+      font-size: 13px;
+      color: var(--gray);
+      transition: color 0.2s;
+    }
+    .contact-link:hover { color: rgba(255,255,255,0.85); }
+    .contact-link svg { flex-shrink: 0; }
+
+    /* RIGHT: form panel */
+    .form-panel {
+      padding: 48px 80px 80px 64px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-title-strip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+      padding: 12px 16px;
+      background: rgba(124,58,237,0.07);
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 12px;
+    }
+    .form-title-strip::before {
+      content: '';
+      width: 3px; height: 28px;
+      background: linear-gradient(180deg, #C4B5FD 0%, #7C3AED 100%);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .form-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+      color: var(--primary-light);
+      margin: 0;
+      -webkit-text-fill-color: initial;
+      background: none;
+    }
+    .form-subtitle {
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+      margin: 4px 0 0;
+      line-height: 1.5;
+    }
+
+    /* ── FORM FIELDS ── */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.65);
+      margin-bottom: 8px;
+      letter-spacing: 0.01em;
+    }
+    label .req {
+      color: var(--primary-light);
+      margin-left: 2px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      background: rgba(255,255,255,0.13);
+      border: 1px solid var(--stroke);
+      border-radius: 10px;
+      color: var(--white);
+      font-family: 'Inter Tight', sans-serif;
+      font-size: 15px;
+      padding: 13px 16px;
+      outline: none;
+      transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+      -webkit-appearance: none;
+    }
+    input::placeholder, textarea::placeholder {
+      color: rgba(255,255,255,0.2);
+    }
+    input:focus, textarea:focus {
+      border-color: rgba(124,58,237,0.6);
+      background: rgba(124,58,237,0.04);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+    }
+    input.error, textarea.error {
+      border-color: rgba(239,68,68,0.6);
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+    }
+    input.valid, textarea.valid {
+      border-color: rgba(34,197,94,0.4);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+      line-height: 1.6;
+    }
+
+    .field-error {
+      display: none;
+      font-size: 12px;
+      color: #f87171;
+      margin-top: 6px;
+      padding-left: 2px;
+    }
+    .field-error.show { display: block; }
+
+    /* ── SUBMIT BUTTON ── */
+    .submit-btn {
+      background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      height: 48px;
+      padding: 0 22px;
+      font-family: 'Inter Tight', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 0;
+      transition: width      0.4s cubic-bezier(0.4,0,0.2,1),
+                  border-radius 0.4s cubic-bezier(0.4,0,0.2,1),
+                  padding    0.4s cubic-bezier(0.4,0,0.2,1),
+                  box-shadow 0.25s ease,
+                  background 0.4s ease;
+      box-shadow: 0 4px 20px rgba(124,58,237,0.35);
+      letter-spacing: 0.01em;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .submit-btn:active { transform: scale(0.95); }
+
+    /* ── ICON WRAPPER ── */
+    .btn-icon-wrap {
+      position: relative;
+      width: 22px; height: 22px;
+      flex-shrink: 0;
+    }
+    .btn-plane, .btn-check-icon {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-plane {
+      transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.4, 0, 0.8, 0.2);
+    }
+    .btn-check-icon {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.5);
+      transition: opacity 0.3s 0.2s ease, transform 0.4s 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* ── LABEL ── */
+    .btn-label {
+      overflow: hidden;
+      max-width: 200px;
+      margin-left: 10px;
+      white-space: nowrap;
+      transition: max-width 0.38s cubic-bezier(0.4,0,0.2,1),
+                  opacity    0.25s ease,
+                  margin     0.38s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* ── HOVER → circle (only on real hover/mouse devices) ── */
+    @media (hover: hover) {
+      .submit-btn:not(:disabled):not(.sent):not(.loading):hover {
+        width: 48px !important;
+        padding: 0;
+        border-radius: 50%;
+        box-shadow: 0 8px 32px rgba(124,58,237,0.5);
+      }
+      .submit-btn:not(:disabled):not(.sent):not(.loading):hover .btn-label {
+        max-width: 0;
+        opacity: 0;
+        margin-left: 0;
+      }
+      .submit-btn:not(:disabled):not(.sent):not(.loading):hover .btn-plane svg {
+        animation: plane-bob 0.5s ease-in-out infinite alternate;
+      }
+    }
+    @keyframes plane-bob {
+      from { transform: translateY(1px) rotate(-5deg); }
+      to   { transform: translateY(-1px) rotate(5deg); }
+    }
+
+    /* ── LOADING ── */
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .submit-btn .spinner {
+      display: none; width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    .submit-btn.loading .spinner        { display: block; }
+    .submit-btn.loading .btn-label      { display: none; }
+    .submit-btn.loading .btn-icon-wrap  { visibility: hidden; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── SENT → stays circle, turns green ── */
+    .submit-btn.sent {
+      pointer-events: none;
+      width: 48px !important;
+      padding: 0;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+      box-shadow: 0 4px 20px rgba(22,163,74,0.4);
+    }
+    .submit-btn.sent .btn-plane {
+      opacity: 0;
+      transform: translate(calc(-50% + 20px), calc(-50% - 16px)) rotate(25deg) scale(0.3);
+    }
+    .submit-btn.sent .btn-check-icon {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .submit-btn.sent .btn-label {
+      max-width: 0; opacity: 0; margin-left: 0;
+      transition: none;
+    }
+    .btn-check-path {
+      stroke-dasharray: 22;
+      stroke-dashoffset: 22;
+      transition: stroke-dashoffset 0.4s 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .submit-btn.sent .btn-check-path { stroke-dashoffset: 0; }
+
+    /* ── SUCCESS STATE ── */
+    .success-state {
+      display: none;
+      text-align: center;
+      padding: 48px 32px;
+      flex: 1;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .success-state.show { display: flex; }
+    .success-icon {
+      width: 72px; height: 72px;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+    }
+    .success-icon svg { color: #22c55e; }
+    .success-state h3 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+    }
+    .success-state p {
+      color: var(--gray);
+      font-size: 15px;
+      line-height: 1.7;
+      max-width: 340px;
+      margin: 0 auto 32px;
+    }
+    .back-home-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--primary-light);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: gap .2s ease;
+    }
+    .back-home-btn:hover { gap: 12px; }
+
+    /* ── PRIVACY NOTE ── */
+    .privacy-note {
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      text-align: center;
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+    .privacy-note a {
+      color: rgba(255,255,255,0.45);
+      text-decoration: none;
+    }
+
+    /* ── FORM BLOCKS ── */
+    .form-block { margin-bottom: 28px; }
+    .form-block-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--stroke);
+    }
+    .form-block-num { display: none; }
+    .form-block-label {
+      font-size: 14px; font-weight: 600;
+      color: var(--primary-light);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    /* ── SELECT ── */
+    select {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.35)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 40px;
+    }
+    select:focus {
+      border-color: rgba(124,58,237,0.6);
+      background-color: rgba(124,58,237,0.04);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+    }
+    select option { background: #161622; color: var(--white); }
+
+    /* ── CUSTOM SELECT ── */
+    .csel-wrap { position: relative; width: 100%; }
+    .csel-trigger {
+      width: 100%; padding: 12px 16px;
+      background: rgba(255,255,255,0.13);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: var(--white);
+      font-family: 'Inter Tight', sans-serif;
+      font-size: 14px;
+      outline: none;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+      display: flex; align-items: center; gap: 8px;
+      line-height: 1.5;
+    }
+    .csel-trigger[data-placeholder="true"] .csel-label { color: rgba(255,255,255,0.35); }
+    .csel-trigger:focus, .csel-trigger.open {
+      border-color: rgba(124,58,237,0.6);
+      background: rgba(124,58,237,0.04);
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+    }
+    .csel-trigger.error {
+      border-color: rgba(248,113,113,0.6) !important;
+      box-shadow: 0 0 0 3px rgba(248,113,113,0.1) !important;
+    }
+    .csel-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .csel-arrow {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.35);
+      transition: transform .2s ease, color .2s;
+    }
+    .csel-trigger.open .csel-arrow { transform: rotate(180deg); color: rgba(255,255,255,0.65); }
+    .csel-panel {
+      position: fixed;
+      z-index: 9990;
+      background: #161622;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      overflow: hidden;
+      opacity: 0;
+      transform: scaleY(0.93);
+      transform-origin: top center;
+      pointer-events: none;
+      transition: opacity .15s ease, transform .15s ease;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .csel-panel.opens-up { transform-origin: bottom center; }
+    .csel-panel.open { opacity: 1; transform: scaleY(1); pointer-events: all; }
+    .csel-list {
+      overflow-y: auto; overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .csel-list::-webkit-scrollbar { width: 4px; }
+    .csel-list::-webkit-scrollbar-track { background: transparent; }
+    .csel-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+    .csel-option {
+      padding: 11px 16px;
+      font-size: 14px; font-family: 'Inter Tight', sans-serif;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      transition: background .12s, color .12s;
+      user-select: none; line-height: 1.4;
+    }
+    .csel-option:hover { background: rgba(124,58,237,0.2); color: #fff; }
+    .csel-option.selected { color: var(--primary-light); background: rgba(124,58,237,0.12); }
+
+    /* ── FRICTION TAGS (Bloco 3) ── */
+    .friction-grid {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-top: 10px;
+    }
+    .friction-tag {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      text-transform: capitalize;
+      font-size: 13px; font-family: 'Inter Tight', sans-serif;
+      color: rgba(255,255,255,0.55);
+      cursor: pointer;
+      transition: border-color .18s ease, background .18s ease, color .18s ease;
+      user-select: none;
+      line-height: 1.4;
+    }
+    .friction-tag:hover {
+      border-color: rgba(124,58,237,0.4);
+      color: rgba(255,255,255,0.8);
+    }
+    .friction-tag.active {
+      border-color: rgba(124,58,237,0.65);
+      background: rgba(124,58,237,0.14);
+      color: var(--white);
+    }
+    .friction-error {
+      display: none; font-size: 12px;
+      color: #f87171; margin-top: 8px;
+    }
+    .friction-error.show { display: block; }
+
+    /* ── SHAPES BACKGROUND (shape-landing-hero) ── */
+    .shapes-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    /* large soft gradient behind all shapes */
+    .shapes-gradient-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(99,102,241,0.03) 0%,
+        transparent 50%,
+        rgba(139,92,246,0.03) 100%
+      );
+      filter: blur(72px);
+    }
+    /* top & bottom edge fade (matches component's overlay) */
+    .shapes-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        #0d0d0d 0%,
+        transparent 35%,
+        rgba(13,13,13,0.88) 100%
+      );
+    }
+    @keyframes shapeFloat {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(15px); }
+    }
+    @keyframes shapeEntry1 {
+      from { opacity:0; transform: translateY(-150px) rotate(-3deg); }
+      to   { opacity:1; transform: translateY(0px) rotate(12deg); }
+    }
+    @keyframes shapeEntry2 {
+      from { opacity:0; transform: translateY(-150px) rotate(-30deg); }
+      to   { opacity:1; transform: translateY(0px) rotate(-15deg); }
+    }
+    @keyframes shapeEntry3 {
+      from { opacity:0; transform: translateY(-150px) rotate(-23deg); }
+      to   { opacity:1; transform: translateY(0px) rotate(-8deg); }
+    }
+    @keyframes shapeEntry4 {
+      from { opacity:0; transform: translateY(-150px) rotate(5deg); }
+      to   { opacity:1; transform: translateY(0px) rotate(20deg); }
+    }
+    @keyframes shapeEntry5 {
+      from { opacity:0; transform: translateY(-150px) rotate(-40deg); }
+      to   { opacity:1; transform: translateY(0px) rotate(-25deg); }
+    }
+
+    /* outer: positioned at shape location, entry animation plays here */
+    .shape-outer {
+      position: absolute;
+    }
+    .shape-outer:nth-child(2) { animation: shapeEntry1 2.4s 0.3s cubic-bezier(0.23,0.86,0.39,0.96) both; }
+    .shape-outer:nth-child(3) { animation: shapeEntry2 2.4s 0.5s cubic-bezier(0.23,0.86,0.39,0.96) both; }
+    .shape-outer:nth-child(4) { animation: shapeEntry3 2.4s 0.4s cubic-bezier(0.23,0.86,0.39,0.96) both; }
+    .shape-outer:nth-child(5) { animation: shapeEntry4 2.4s 0.6s cubic-bezier(0.23,0.86,0.39,0.96) both; }
+    .shape-outer:nth-child(6) { animation: shapeEntry5 2.4s 0.7s cubic-bezier(0.23,0.86,0.39,0.96) both; }
+
+    /* inner: floats after entry finishes */
+    .shape-outer:nth-child(2) .shape-inner { animation: shapeFloat 12s 2.7s ease-in-out infinite; }
+    .shape-outer:nth-child(3) .shape-inner { animation: shapeFloat 12s 2.9s ease-in-out infinite; }
+    .shape-outer:nth-child(4) .shape-inner { animation: shapeFloat 12s 2.8s ease-in-out infinite; }
+    .shape-outer:nth-child(5) .shape-inner { animation: shapeFloat 12s 3.0s ease-in-out infinite; }
+    .shape-outer:nth-child(6) .shape-inner { animation: shapeFloat 12s 3.1s ease-in-out infinite; }
+    /* the visual pill */
+    .shape-pill {
+      border-radius: 9999px;
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      border: 1px solid rgba(255,255,255,0.09);
+      box-shadow: 0 8px 32px 0 rgba(255,255,255,0.04);
+      position: relative;
+    }
+    .shape-pill::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2), transparent 70%);
+    }
+
+    /* ── MOBILE ── */
+    @media (max-width: 900px) {
+      .page-grid { grid-template-columns: 1fr; }
+      .info-panel {
+        padding: 56px 24px 40px;
+        border-right: none;
+        border-bottom: 1px solid var(--stroke);
+        position: relative !important;
+        top: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      .info-panel::before { display: none; }
+      /* hide inline contact-links — shown in fixed bottom bar instead */
+      .info-panel .contact-links { display: none !important; }
+      .info-panel .info-divider { display: none !important; }
+      .form-panel { padding: 40px 24px 100px; }
+      .form-row { grid-template-columns: 1fr; }
+      body { cursor: auto; }
+      .cursor-dot, .cursor-ring { display: none; }
+
+      /* ── Fixed bottom bar ── */
+      .contact-bottom-bar {
+        display: flex !important;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 90;
+        background: rgba(12, 10, 20, 0.96);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255,255,255,0.08);
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+        gap: 10px;
+        align-items: center;
+        justify-content: center;
+      }
+      .contact-bottom-bar a {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--gray);
+        white-space: nowrap;
+        transition: color 0.2s;
+      }
+      .contact-bottom-bar a:hover { color: #fff; }
+      .contact-bottom-bar a svg { flex-shrink: 0; }
+      .contact-bottom-bar .bar-sep {
+        width: 1px; height: 18px;
+        background: rgba(255,255,255,0.15);
+        flex-shrink: 0;
+      }
+    }
+    @media (max-width: 600px) {
+      header .container { padding: 0 20px; }
+      .info-panel { padding: 40px 20px 32px; }
+      .form-panel { padding: 32px 20px 100px; }
+      .info-title { font-size: 22px; }
+      .info-subtitle { font-size: 14px; }
+      .friction-tags { gap: 8px; }
+      .friction-tag { font-size: 12px; padding: 6px 12px; }
+      .form-title { font-size: 14px; }
+      .form-block-label { font-size: 12px; }
+      .field-input, .field-select, .field-textarea { font-size: 15px; }
+      .submit-btn { width: auto !important; border-radius: 14px !important; transition: box-shadow 0.25s ease, background 0.4s ease; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Custom cursor -->
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- ── SHAPES BACKGROUND ── -->
+  <div class="shapes-bg" aria-hidden="true">
+    <div class="shapes-gradient-bg"></div>
+
+    <!-- Shape 1: indigo — large, top-left -->
+    <div class="shape-outer" style="left:6%;top:20%;">
+      <div class="shape-inner">
+        <div class="shape-pill" style="width:600px;height:140px;background:linear-gradient(to right,rgba(99,102,241,0.12),transparent);"></div>
+      </div>
+    </div>
+
+    <!-- Shape 2: rose — large, bottom-right -->
+    <div class="shape-outer" style="right:10%;top:75%;">
+      <div class="shape-inner">
+        <div class="shape-pill" style="width:500px;height:120px;background:linear-gradient(to right,rgba(99,102,241,0.12),transparent);"></div>
+      </div>
+    </div>
+
+    <!-- Shape 3: violet — medium, bottom-left -->
+    <div class="shape-outer" style="left:18%;bottom:10%;">
+      <div class="shape-inner">
+        <div class="shape-pill" style="width:300px;height:80px;background:linear-gradient(to right,rgba(139,92,246,0.12),transparent);"></div>
+      </div>
+    </div>
+
+    <!-- Shape 4: violet — small, top-right -->
+    <div class="shape-outer" style="right:28%;top:15%;">
+      <div class="shape-inner">
+        <div class="shape-pill" style="width:200px;height:60px;background:linear-gradient(to right,rgba(139,92,246,0.12),transparent);"></div>
+      </div>
+    </div>
+
+    <!-- Shape 5: cyan — tiny, top-center-left -->
+    <div class="shape-outer" style="left:33%;top:10%;">
+      <div class="shape-inner">
+        <div class="shape-pill" style="width:150px;height:40px;background:linear-gradient(to right,rgba(6,182,212,0.12),transparent);"></div>
+      </div>
+    </div>
+
+    <div class="shapes-overlay"></div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <div class="header-inner">
+        <a href="index.html" style="display:flex;align-items:center;text-decoration:none;">
+          <img src="brand_assets/syno-logo-branca.png" alt="SYNO" style="height:36px;width:auto;display:block;">
+        </a>
+        <a href="index.html" class="back-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+          Voltar ao site
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page -->
+  <div class="page">
+
+    <div class="page-grid">
+
+      <!-- LEFT: info panel -->
+      <div class="info-panel">
+
+        <div class="fade-up" style="transition-delay:.05s">
+          <h1 class="info-heading">
+            Vamos estruturar<br>
+            <span class="gradient-text">sua operação juntos.</span>
+          </h1>
+          <p class="info-sub">
+            Conte como sua operação funciona hoje. A partir desse contexto, analisamos fluxos, integrações e maturidade operacional para identificar onde tecnologia pode realmente gerar evolução.
+          </p>
+        </div>
+
+        <div class="fade-up" style="transition-delay:.15s">
+          <div class="trust-list">
+            <div class="trust-item">
+              <div class="trust-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
+              <div class="trust-text">
+                <strong>Resposta em até 24h</strong>
+                <span>Nossa equipe analisa cada contato com atenção antes de responder.</span>
+              </div>
+            </div>
+            <div class="trust-item">
+              <div class="trust-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div class="trust-text">
+                <strong>Sem compromisso</strong>
+                <span>A conversa inicial é exploratória, sem pressão de venda.</span>
+              </div>
+            </div>
+            <div class="trust-item">
+              <div class="trust-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div class="trust-text">
+                <strong>Diagnóstico personalizado</strong>
+                <span>Cada resposta é pensada para o contexto específico da sua operação.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fade-up" style="transition-delay:.25s">
+          <div class="info-divider"></div>
+          <div class="contact-links">
+            <a href="https://wa.me/5511923656154" target="_blank" rel="noopener" class="contact-link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+              +55 (11) 92365-6154
+            </a>
+            <a href="mailto:comercial@synotech.com.br" class="contact-link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+              </svg>
+              comercial@synotech.com.br
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: form panel -->
+      <div class="form-panel">
+
+        <!-- Form -->
+        <div id="formWrapper" class="fade-up" style="transition-delay:.1s">
+          <div class="form-title-strip">
+            <div>
+              <p class="form-title">Conte um pouco sobre sua operação</p>
+              <p class="form-subtitle">Campos com <span style="color:var(--primary-light)">*</span> são obrigatórios.</p>
+            </div>
+          </div>
+
+          <!--
+            INTEGRAÇÃO FORMSPREE:
+            1. Crie uma conta em formspree.io
+            2. Crie um novo formulário e copie o ID (ex: xrgvapqb)
+            3. Substitua "SEU_ID_AQUI" abaixo pelo ID obtido
+          -->
+          <form id="contactForm" action="https://formspree.io/f/SEU_ID_AQUI" method="POST" novalidate>
+
+            <!-- BLOCO 1: Contexto básico -->
+            <div class="form-block">
+              <div class="form-block-header">
+                <span class="form-block-num">01</span>
+                <span class="form-block-label">Seus dados</span>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="nome">Nome <span class="req">*</span></label>
+                  <input type="text" id="nome" name="nome" placeholder="Seu nome completo" autocomplete="name">
+                  <span class="field-error" id="err-nome">Por favor, informe seu nome.</span>
+                </div>
+                <div class="form-group">
+                  <label for="cargo">Cargo <span class="req">*</span></label>
+                  <input type="text" id="cargo" name="cargo" placeholder="Ex: CEO, Head de Operações…">
+                  <span class="field-error" id="err-cargo">Por favor, informe seu cargo.</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="empresa">Nome da empresa <span class="req">*</span></label>
+                <input type="text" id="empresa" name="empresa" placeholder="Nome da empresa" autocomplete="organization">
+                <span class="field-error" id="err-empresa">Por favor, informe o nome da empresa.</span>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="setor">Setor <span class="req">*</span></label>
+                  <select id="setor" name="setor">
+                    <option value="" disabled selected>Selecione o setor</option>
+                    <option>Tecnologia / SaaS</option>
+                    <option>Desenvolvimento de Software</option>
+                    <option>Inteligência Artificial / Dados</option>
+                    <option>Cibersegurança</option>
+                    <option>Infraestrutura / Cloud</option>
+                    <option>Saúde / Hospitais / Clínicas</option>
+                    <option>Healthtech / Medtech</option>
+                    <option>Farmacêutico</option>
+                    <option>Bem-estar / Fitness</option>
+                    <option>Financeiro / Banco</option>
+                    <option>Fintechs / Pagamentos</option>
+                    <option>Seguros</option>
+                    <option>Investimentos / Gestão de Ativos</option>
+                    <option>Contabilidade / Auditoria</option>
+                    <option>Varejo / E-commerce</option>
+                    <option>Moda / Têxtil</option>
+                    <option>Alimentação / Food Service</option>
+                    <option>Beleza / Cosméticos</option>
+                    <option>Bens de Consumo (FMCG)</option>
+                    <option>Indústria / Manufatura</option>
+                    <option>Logística / Transporte / Supply Chain</option>
+                    <option>Energia / Utilities</option>
+                    <option>Mineração / Petróleo &amp; Gás</option>
+                    <option>Agronegócio / Agritech</option>
+                    <option>Imobiliário / Construtoras</option>
+                    <option>Arquitetura / Engenharia</option>
+                    <option>Facilities / Property Management</option>
+                    <option>Educação / Edtech</option>
+                    <option>Treinamento &amp; Desenvolvimento</option>
+                    <option>Comunicação / Marketing / Publicidade</option>
+                    <option>Mídia / Entretenimento</option>
+                    <option>Consultoria / Advisory</option>
+                    <option>Jurídico / LegalTech</option>
+                    <option>RH / HRtech</option>
+                    <option>Turismo / Hospitalidade</option>
+                    <option>Governo / Setor Público</option>
+                    <option>ONGs / Terceiro Setor</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                  <div id="setorOutroWrap" style="display:none;margin-top:8px;">
+                    <input type="text" id="setorOutro" name="setor_outro" placeholder="Descreva seu setor…">
+                  </div>
+                  <span class="field-error" id="err-setor">Selecione o setor da empresa.</span>
+                </div>
+                <div class="form-group">
+                  <label for="colaboradores">Número de colaboradores <span class="req">*</span></label>
+                  <select id="colaboradores" name="colaboradores">
+                    <option value="" disabled selected>Selecione o porte</option>
+                    <option>1 – 10</option>
+                    <option>11 – 50</option>
+                    <option>51 – 200</option>
+                    <option>201 – 500</option>
+                    <option>500+</option>
+                  </select>
+                  <span class="field-error" id="err-colaboradores">Selecione o número de colaboradores.</span>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="email">E-mail de contato <span class="req">*</span></label>
+                  <input type="email" id="email" name="email" placeholder="voce@empresa.com" autocomplete="email">
+                  <span class="field-error" id="err-email">Por favor, informe um e-mail válido.</span>
+                </div>
+                <div class="form-group">
+                  <label for="telefone">Telefone de contato</label>
+                  <input type="tel" id="telefone" name="telefone" placeholder="(11) 99999-9999" autocomplete="tel">
+                </div>
+              </div>
+            </div>
+
+            <!-- BLOCO 2: Stack atual -->
+            <div class="form-block">
+              <div class="form-block-header">
+                <span class="form-block-num">02</span>
+                <span class="form-block-label">Sua operação hoje</span>
+              </div>
+
+              <div class="form-group">
+                <label for="ferramentas">Quais ferramentas são mais importantes na sua operação hoje? <span class="req">*</span></label>
+                <textarea id="ferramentas" name="ferramentas" style="min-height:90px;" placeholder="CRM, ERP, Notion, planilhas, sistemas internos, WhatsApp, etc."></textarea>
+                <span class="field-error" id="err-ferramentas">Descreva as ferramentas que sua equipe usa.</span>
+              </div>
+            </div>
+
+            <!-- BLOCO 3: Maturidade operacional -->
+            <div class="form-block">
+              <div class="form-block-header">
+                <span class="form-block-num">03</span>
+                <span class="form-block-label">Principais atritos</span>
+              </div>
+
+              <div class="form-group">
+                <label>Onde você sente maior fricção operacional hoje? <span class="req">*</span></label>
+                <div class="friction-grid" id="friccaoGrid">
+                  <button type="button" class="friction-tag" data-value="processos manuais">processos manuais</button>
+                  <button type="button" class="friction-tag" data-value="retrabalho">retrabalho</button>
+                  <button type="button" class="friction-tag" data-value="falta de integração">falta de integração</button>
+                  <button type="button" class="friction-tag" data-value="pouca visibilidade">pouca visibilidade</button>
+                  <button type="button" class="friction-tag" data-value="dificuldade de escalar">dificuldade de escalar</button>
+                  <button type="button" class="friction-tag" data-value="dados dispersos">dados dispersos</button>
+                  <button type="button" class="friction-tag" data-value="dependência de pessoas">dependência de pessoas</button>
+                  <button type="button" class="friction-tag" data-value="outro" id="tagOutro">outro</button>
+                </div>
+                <!-- Shown when "outro" is active -->
+                <div id="outroWrap" style="display:none;margin-top:10px;">
+                  <input type="text" id="friccaoOutro" name="friccao_outro" placeholder="Descreva brevemente…">
+                </div>
+                <span class="friction-error" id="err-friccao">Selecione ao menos uma opção.</span>
+                <!-- hidden input populated by JS -->
+                <input type="hidden" id="friccao" name="friccao">
+              </div>
+            </div>
+
+            <!-- BLOCO 4: Mensagem livre -->
+            <div class="form-block">
+              <div class="form-block-header">
+                <span class="form-block-num">04</span>
+                <span class="form-block-label">Contexto adicional</span>
+              </div>
+              <div class="form-group">
+                <label for="mensagem">Existe mais algum contexto importante para entendermos sua operação?</label>
+                <textarea id="mensagem" name="mensagem" style="min-height:110px;" placeholder="Contexto adicional, urgência, dúvidas específicas…"></textarea>
+              </div>
+            </div>
+
+            <!-- Hidden honeypot anti-spam -->
+            <input type="text" name="_gotcha" style="display:none">
+
+            <div style="text-align:center">
+            <button type="submit" class="submit-btn" id="submitBtn">
+              <div class="btn-icon-wrap">
+                <!-- Paper plane (default) -->
+                <div class="btn-plane">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+                    <path fill="none" d="M0 0h24v24H0z"/>
+                    <path fill="currentColor" d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-8.054-2.685z"/>
+                  </svg>
+                </div>
+                <!-- Check (shown on sent) -->
+                <div class="btn-check-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path class="btn-check-path" d="M5 13l4 4L19 7" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+              <span class="btn-label">Enviar contexto</span>
+              <span class="spinner"></span>
+            </button>
+            </div>
+
+            <p class="privacy-note">
+              Ao enviar, você concorda que seus dados sejam usados para responder ao seu contato. Nada de spam.
+            </p>
+
+          </form>
+        </div>
+
+        <!-- Success state (shown after submit) -->
+        <div class="success-state" id="successState">
+          <div class="success-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <h3>Mensagem enviada!</h3>
+          <p>Recebemos seu contato e nossa equipe retornará em até 24 horas com uma resposta personalizada.</p>
+          <a href="index.html" class="back-home-btn">
+            Voltar ao site
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── PIN SUBMIT BUTTON WIDTH (desktop only — mobile uses auto) ─
+    if (window.innerWidth > 600) {
+      requestAnimationFrame(() => {
+        const btn = document.getElementById('submitBtn');
+        if (btn) btn.style.width = btn.offsetWidth + 'px';
+      });
+    }
+
+
+    // ── CURSOR ──────────────────────────────────────────────
+    (function () {
+      const dot  = document.getElementById('cursorDot');
+      const ring = document.getElementById('cursorRing');
+      if (!dot || !ring) return;
+
+      let rx = 0, ry = 0, mx = 0, my = 0;
+
+      document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+      function loop() {
+        dot.style.left  = mx + 'px';
+        dot.style.top   = my + 'px';
+        rx += (mx - rx) * 0.12;
+        ry += (my - ry) * 0.12;
+        ring.style.left = rx + 'px';
+        ring.style.top  = ry + 'px';
+        requestAnimationFrame(loop);
+      }
+      loop();
+
+      document.querySelectorAll('a, button, input, textarea, label').forEach(el => {
+        el.addEventListener('mouseenter', () => ring.classList.add('hover'));
+        el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+      });
+    })();
+
+    // ── FADE-UP ──────────────────────────────────────────────
+    (function () {
+      const obs = new IntersectionObserver((entries) => {
+        const incoming = entries.filter(e => e.isIntersecting);
+        incoming.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        incoming.forEach((entry, idx) => {
+          const el = entry.target;
+          el.style.transitionDelay = el.style.transitionDelay || `${(idx * 0.08).toFixed(2)}s`;
+          el.classList.add('is-visible');
+          el.addEventListener('transitionend', (e) => {
+            if (e.propertyName !== 'opacity' && e.propertyName !== 'transform' && e.propertyName !== 'filter') return;
+            el.style.transitionDelay = '';
+            el.classList.remove('fade-up', 'is-visible');
+          }, { once: true });
+          obs.unobserve(el);
+        });
+      }, { threshold: 0.08 });
+
+      document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+    })();
+
+    // ── PHONE MASK ───────────────────────────────────────────
+    document.getElementById('telefone').addEventListener('input', function () {
+      let v = this.value.replace(/\D/g, '').slice(0, 11);
+      if (v.length > 6) v = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7);
+      else if (v.length > 2) v = '(' + v.slice(0,2) + ') ' + v.slice(2);
+      else if (v.length > 0) v = '(' + v;
+      this.value = v;
+    });
+
+    // ── SETOR "OUTRO" REVEAL ─────────────────────────────────
+    (function () {
+      const setor = document.getElementById('setor');
+      const wrap  = document.getElementById('setorOutroWrap');
+      setor.addEventListener('change', () => {
+        wrap.style.display = setor.value === 'Outro' ? 'block' : 'none';
+        if (setor.value !== 'Outro') document.getElementById('setorOutro').value = '';
+      });
+    })();
+
+    // ── FRICTION TAGS ────────────────────────────────────────
+    (function () {
+      const grid      = document.getElementById('friccaoGrid');
+      const hidden    = document.getElementById('friccao');
+      const outroWrap = document.getElementById('outroWrap');
+
+      function syncHidden() {
+        const selected = [...grid.querySelectorAll('.friction-tag.active')]
+          .map(t => t.dataset.value);
+        const outroText = document.getElementById('friccaoOutro').value.trim();
+        const values = selected.map(v => (v === 'outro' && outroText) ? `outro: ${outroText}` : v);
+        hidden.value = values.join(', ');
+        if (selected.length > 0) {
+          document.getElementById('err-friccao').classList.remove('show');
+        }
+      }
+
+      grid.querySelectorAll('.friction-tag').forEach(tag => {
+        tag.addEventListener('click', () => {
+          tag.classList.toggle('active');
+          const isOutroActive = document.getElementById('tagOutro').classList.contains('active');
+          outroWrap.style.display = isOutroActive ? 'block' : 'none';
+          if (!isOutroActive) document.getElementById('friccaoOutro').value = '';
+          syncHidden();
+        });
+      });
+
+      document.getElementById('friccaoOutro').addEventListener('input', syncHidden);
+    })();
+
+    // ── CUSTOM SELECT ────────────────────────────────────────
+    (function () {
+      const GAP = 6;
+
+      function buildCustomSelect(selectEl) {
+        const wrap = document.createElement('div');
+        wrap.className = 'csel-wrap';
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'csel-trigger';
+        trigger.setAttribute('data-placeholder', 'true');
+
+        const trigLabel = document.createElement('span');
+        trigLabel.className = 'csel-label';
+        const placeholderOpt = selectEl.querySelector('option[disabled]');
+        trigLabel.textContent = placeholderOpt ? placeholderOpt.textContent : 'Selecione…';
+
+        const trigArrow = document.createElement('span');
+        trigArrow.className = 'csel-arrow';
+        trigArrow.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+
+        trigger.appendChild(trigLabel);
+        trigger.appendChild(trigArrow);
+
+        const panel = document.createElement('div');
+        panel.className = 'csel-panel';
+        const list = document.createElement('div');
+        list.className = 'csel-list';
+
+        selectEl.querySelectorAll('option:not([disabled])').forEach(opt => {
+          const item = document.createElement('div');
+          item.className = 'csel-option';
+          item.textContent = opt.textContent;
+          item.dataset.value = opt.value || opt.textContent;
+          list.appendChild(item);
+        });
+
+        panel.appendChild(list);
+        selectEl.parentNode.insertBefore(wrap, selectEl);
+        wrap.appendChild(trigger);
+        wrap.appendChild(selectEl);
+        document.body.appendChild(panel);
+
+        // Hide native select but keep accessible for validation
+        selectEl.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
+
+        let isOpen = false;
+
+        function getBarH() {
+          const bar = document.querySelector('.contact-bottom-bar');
+          if (!bar) return 0;
+          return window.getComputedStyle(bar).display !== 'none' ? bar.offsetHeight : 0;
+        }
+
+        function openPanel() {
+          if (isOpen) return;
+          isOpen = true;
+          trigger.classList.add('open');
+
+          const rect = trigger.getBoundingClientRect();
+          const viewH = window.innerHeight;
+          const barH = getBarH();
+          const spaceBelow = viewH - rect.bottom - barH - GAP * 2;
+          const spaceAbove = rect.top - GAP * 2;
+
+          const goUp = spaceBelow < 180 && spaceAbove > spaceBelow;
+          const maxH = Math.min(goUp ? spaceAbove : spaceBelow, 260);
+
+          panel.style.width = rect.width + 'px';
+          panel.style.left  = rect.left + 'px';
+          list.style.maxHeight = Math.max(maxH, 80) + 'px';
+
+          if (goUp) {
+            panel.style.top    = 'auto';
+            panel.style.bottom = (viewH - rect.top + GAP) + 'px';
+            panel.classList.add('opens-up');
+          } else {
+            panel.style.bottom = 'auto';
+            panel.style.top    = (rect.bottom + GAP) + 'px';
+            panel.classList.remove('opens-up');
+          }
+
+          panel.classList.add('open');
+          const sel = list.querySelector('.csel-option.selected');
+          if (sel) setTimeout(() => sel.scrollIntoView({ block: 'nearest' }), 50);
+        }
+
+        function closePanel() {
+          if (!isOpen) return;
+          isOpen = false;
+          trigger.classList.remove('open');
+          panel.classList.remove('open');
+        }
+
+        trigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          isOpen ? closePanel() : openPanel();
+        });
+
+        list.querySelectorAll('.csel-option').forEach(item => {
+          item.addEventListener('click', () => {
+            selectEl.value = item.dataset.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            trigLabel.textContent = item.textContent;
+            trigger.removeAttribute('data-placeholder');
+            list.querySelectorAll('.csel-option').forEach(o => o.classList.remove('selected'));
+            item.classList.add('selected');
+            closePanel();
+          });
+          // cursor hover
+          item.addEventListener('mouseenter', () => document.getElementById('cursorRing')?.classList.add('hover'));
+          item.addEventListener('mouseleave', () => document.getElementById('cursorRing')?.classList.remove('hover'));
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!panel.contains(e.target) && e.target !== trigger) closePanel();
+        });
+        window.addEventListener('resize', closePanel);
+        window.addEventListener('scroll', closePanel, { passive: true });
+
+        // Sync error/valid class from native select to trigger
+        new MutationObserver(() => {
+          trigger.classList.toggle('error', selectEl.classList.contains('error'));
+        }).observe(selectEl, { attributes: true, attributeFilter: ['class'] });
+      }
+
+      buildCustomSelect(document.getElementById('setor'));
+      buildCustomSelect(document.getElementById('colaboradores'));
+    })();
+
+    // ── FORM VALIDATION & SUBMIT ──────────────────────────────
+    (function () {
+      const form    = document.getElementById('contactForm');
+      const btn     = document.getElementById('submitBtn');
+      const wrapper = document.getElementById('formWrapper');
+      const success = document.getElementById('successState');
+
+      function showError(id, show, isSelect) {
+        const errEl  = document.getElementById('err-' + id);
+        const input  = document.getElementById(id);
+        if (!errEl || !input) return;
+        if (show) {
+          errEl.classList.add('show');
+          input.classList.add('error');
+          input.classList.remove('valid');
+        } else {
+          errEl.classList.remove('show');
+          input.classList.remove('error');
+          if (!isSelect) input.classList.add('valid');
+        }
+      }
+
+      function validate() {
+        let ok = true;
+
+        const nome = document.getElementById('nome').value.trim();
+        const badNome = nome.length < 2;
+        showError('nome', badNome);
+        if (badNome) ok = false;
+
+        const cargo = document.getElementById('cargo').value.trim();
+        const badCargo = cargo.length < 2;
+        showError('cargo', badCargo);
+        if (badCargo) ok = false;
+
+        const empresa = document.getElementById('empresa').value.trim();
+        const badEmp = empresa.length < 1;
+        showError('empresa', badEmp);
+        if (badEmp) ok = false;
+
+        const setor = document.getElementById('setor').value;
+        const badSetor = !setor;
+        showError('setor', badSetor, true);
+        if (badSetor) ok = false;
+
+        const colab = document.getElementById('colaboradores').value;
+        const badColab = !colab;
+        showError('colaboradores', badColab, true);
+        if (badColab) ok = false;
+
+        const email = document.getElementById('email').value.trim();
+        const badEmail = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        showError('email', badEmail);
+        if (badEmail) ok = false;
+
+        const ferramentas = document.getElementById('ferramentas').value.trim();
+        const badFerr = ferramentas.length < 3;
+        showError('ferramentas', badFerr);
+        if (badFerr) ok = false;
+
+        const friccao = document.getElementById('friccao').value;
+        const badFriccao = !friccao;
+        const errFriccao = document.getElementById('err-friccao');
+        if (badFriccao) { errFriccao.classList.add('show'); ok = false; }
+        else errFriccao.classList.remove('show');
+
+        return ok;
+      }
+
+      // Clear individual field error as user fixes it (no full-form validation until submit)
+      ['nome', 'cargo', 'empresa', 'email', 'ferramentas'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', () => {
+          if (el.classList.contains('error') && el.value.trim().length > 0) {
+            showError(id, false);
+          }
+        });
+      });
+      ['setor', 'colaboradores'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('change', () => {
+          if (el.classList.contains('error') && el.value) showError(id, false, true);
+        });
+      });
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        if (!validate()) return;
+
+        btn.disabled = true;
+        btn.classList.add('loading');
+
+        try {
+          const data = new FormData(form);
+          const res  = await fetch(form.action, {
+            method: 'POST',
+            body: data,
+            headers: { 'Accept': 'application/json' }
+          });
+
+          btn.classList.remove('loading');
+          if (res.ok) {
+            btn.style.width = btn.offsetWidth + 'px';
+            btn.offsetWidth;
+            btn.classList.add('sent');
+            setTimeout(() => {
+              wrapper.style.display = 'none';
+              success.classList.add('show');
+            }, 1600);
+          } else {
+            btn.disabled = false;
+            alert('Erro ao enviar. Tente novamente.');
+          }
+        } catch {
+          btn.classList.remove('loading');
+          btn.disabled = false;
+          alert('Erro de conexão. Tente novamente.');
+        }
+      });
+    })();
+  </script>
+
+  <!-- Fixed bottom bar (mobile only) -->
+  <div class="contact-bottom-bar" style="display:none;">
+    <a href="https://wa.me/5511923656154" target="_blank" rel="noopener">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+      </svg>
+      +55 (11) 92365-6154
+    </a>
+    <div class="bar-sep"></div>
+    <a href="mailto:comercial@synotech.com.br">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+      </svg>
+      comercial@synotech.com.br
+    </a>
+  </div>
+
+</body>
+</html>

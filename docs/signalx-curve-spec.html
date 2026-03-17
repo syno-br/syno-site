@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════════════════╗
+  ║  SIGNALX CURVE ANIMATION — SPEC FILE COMPLETO                       ║
+  ║  Fonte: https://signalx.webflow.io/                                  ║
+  ║  Todos os valores extraídos diretamente dos arquivos Lottie JSON     ║
+  ╚══════════════════════════════════════════════════════════════════════╝
+
+  ARQUIVOS LOTTIE ORIGINAIS:
+  • Hero Left:   /68ebcd6718be3f55d1508836_data.json  (196×677px)
+  • Hero Right:  /68ebcd6fa560a2cc452fa8e6_data.json  (196×677px) — mirror do left
+  • Simple:      /68d96ff86dfc483d213bd16c_data.json  (1440×881px)
+
+  CORES EXATAS:
+  • #656ae1  →  rgb(101, 106, 225)  — índigo/roxo (stroke + glow + shadow)
+  • #1d1e36  →  rgb(29, 30, 54)     — navy escuro (rail de fundo)
+  • #060610  →  background geral
+  • #020207  →  background hero
+
+  NOTAS DE IMPLEMENTAÇÃO:
+  • A "sombra azulada" (triangle shadow) é um polígono fechado com gradient fill
+  • O "glow" é uma CÓPIA do path com feGaussianBlur stdDeviation="34"
+  • A animação é stroke-dashoffset (self-draw) via TrimPaths do Lottie
+  • Hero glow dot = segmento de ~15% do path rodando em loop infinito
+-->
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignalX Curve Spec</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #060610;
+      font-family: system-ui, sans-serif;
+      color: white;
+    }
+
+    /* ─── LABEL DE SEÇÃO ─────────────────────────── */
+    .label {
+      position: absolute;
+      top: 16px;
+      left: 24px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: #656ae1;
+      text-transform: uppercase;
+      z-index: 10;
+    }
+
+    /* ─── SEÇÃO HERO (S-CURVE LINES) ─────────────── */
+    .hero-section {
+      position: relative;
+      width: 100%;
+      height: 677px;
+      background: #020207;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ─── SEÇÃO SIMPLE (CURVE + GLOW + SHADOW) ───── */
+    .simple-section {
+      position: relative;
+      width: 100%;
+      height: 881px;
+      background: #060610;
+      overflow: hidden;
+    }
+
+    /* ─────────────────────────────────────────────────
+       HERO GLOW DOT ANIMATION
+       Equivalente ao TrimPaths offset 0°→360° do Lottie
+       O segmento visível (15% do path ≈ 102px em 680px)
+       percorre o caminho em loop de 3s
+    ───────────────────────────────────────────────── */
+    @keyframes glowDotTravel {
+      0%   { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: -680; }
+    }
+
+    .hero-glow-dot {
+      stroke-dasharray: 102 578; /* 15% visible, 85% gap */
+      animation: glowDotTravel 3s linear infinite;
+    }
+
+    /* ─────────────────────────────────────────────────
+       SIMPLE CURVE SELF-DRAW ANIMATION
+       TrimPaths end: 0→100% em 2s com easing cubic-bezier(0.6, 0, 1, 1)
+    ───────────────────────────────────────────────── */
+    @keyframes selfDraw {
+      from { stroke-dashoffset: 1600; }
+      to   { stroke-dashoffset: 0; }
+    }
+
+    .curve-draw {
+      stroke-dasharray: 1600;
+      stroke-dashoffset: 1600;
+      animation: selfDraw 2s cubic-bezier(0.6, 0, 1, 1) forwards;
+      animation-delay: 0.3s;
+    }
+  </style>
+</head>
+<body>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     DEMO 1 — HERO S-CURVE LINES
+     Arquivo Lottie: hero-left-line / hero-right-line
+     Canvas: 196×677px cada
+     Comportamento: auto-play, loop infinito, 3s
+     Posicionamento no site: absolute left:0 e right:0 do hero section
+     ══════════════════════════════════════════════════════════════════ -->
+<section class="hero-section">
+  <div class="label">Demo 1 — Hero S-Curve Lines</div>
+
+  <!--
+    ─── HERO LEFT LINE ──────────────────────────────────────────────
+
+    PATH (calculado do Lottie JSON):
+    Layer position p=[90, 338.75], anchor a=[0,0]
+    Canvas: 196×677
+
+    Vértices no espaço do canvas (local + posição da layer):
+      P0 = (-87.5 + 90, -338.75 + 338.75) = (2.5,   0)
+      P1 = (-87.5 + 90,  -66.41 + 338.75) = (2.5,   272.34)
+      P2 = (-78.0 + 90,  -49.39 + 338.75) = (12.0,  289.36)
+      P3 = ( 78.0 + 90,   46.89 + 338.75) = (168.0, 385.64)
+      P4 = ( 87.5 + 90,   63.91 + 338.75) = (177.5, 402.66)
+      P5 = ( 87.5 + 90,  338.75 + 338.75) = (177.5, 677.5)
+
+    Tangentes das curvas (apenas P1→P2 e P3→P4 têm tangente):
+      P1→P2: o[1]=[0, 6.936] → CP1=(2.5, 279.28)
+             i[2]=[-5.903,-3.643] → CP2=(6.09, 285.72)
+      P3→P4: o[3]=[5.903, 3.643] → CP1=(173.91, 389.28)
+             i[4]=[0, -6.936] → CP2=(177.5, 395.72)
+
+    Round Corners: r=20 (suaviza as quinas onde L encontra C)
+
+    SHAPE VISUAL:
+    Topo:   linha vertical no lado ESQUERDO (x≈2.5)
+    Meio:   diagonal cruzando da esquerda para direita (S-bend)
+    Base:   linha vertical no lado DIREITO (x≈177.5)
+
+    LAYERS (bottom → top):
+    1. Rail escura estática (#1d1e36, 1px)
+    2. Glow dot branco animado (gradiente branco→transparente, 2px)
+       Gradiente: white (opacity 1.0) → gray (opacity 0.5) → black (opacity 0.0)
+       Animação: segmento de 15% percorre o path em 3s, loop
+  -->
+  <svg
+    style="position:absolute; left:0; top:0; width:196px; height:677px;"
+    viewBox="0 0 196 677"
+    xmlns="http://www.w3.org/2000/svg"
+    overflow="visible">
+
+    <defs>
+      <!--
+        GRADIENTE DO GLOW DOT:
+        Lottie k=[0,1,1,1, 0.5,0.5,0.5,0.5, 1,0,0,0, 0,1, 0.5,0.5, 1,0]
+        = 3 color stops: white / gray / black
+        + alpha stops:   1.0   / 0.5  / 0.0
+        Resultado: white opaco → cinza semi → transparente
+
+        O gradiente vai na direção do movimento (top→bottom = y0→y677)
+        Simula o "brilho no centro, apaga nas pontas" do segmento
+      -->
+      <linearGradient id="heroDotGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#ffffff" stop-opacity="1.0"/>
+        <stop offset="50%"  stop-color="#9a9aad" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.0"/>
+      </linearGradient>
+
+      <!-- Glow suave ao redor do dot -->
+      <filter id="heroDotGlow" x="-200%" y="-50%" width="500%" height="200%">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+
+    <!--
+      Layer 1: RAIL ESCURA (fundo estático)
+      Cor: #1d1e36  Stroke: 1px  Sem animação
+    -->
+    <path
+      d="M 2.5,0
+         L 2.5,272.34
+         C 2.5,279.28 6.09,285.72 12.0,289.36
+         L 168.0,385.64
+         C 173.91,389.28 177.5,395.72 177.5,402.66
+         L 177.5,677.5"
+      fill="none"
+      stroke="#1d1e36"
+      stroke-width="1"
+      stroke-linecap="round"
+      stroke-linejoin="round"/>
+
+    <!--
+      Layer 2: GLOW DOT ANIMADO
+      Stroke: gradiente branco→transparente, 2px
+      Dasharray: 102px visible (≈15% de 680px total), 578px gap
+      Dashoffset: 0→-680 em 3s, linear, infinite
+    -->
+    <path
+      d="M 2.5,0
+         L 2.5,272.34
+         C 2.5,279.28 6.09,285.72 12.0,289.36
+         L 168.0,385.64
+         C 173.91,389.28 177.5,395.72 177.5,402.66
+         L 177.5,677.5"
+      fill="none"
+      stroke="url(#heroDotGrad)"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      filter="url(#heroDotGlow)"
+      class="hero-glow-dot"/>
+
+  </svg>
+
+
+  <!--
+    ─── HERO RIGHT LINE ─────────────────────────────────────────────
+    Arquivo JSON idêntico ao left, MAS o precomp tem scale.x = -100
+    = espelho horizontal perfeito em torno do centro do canvas (196/2=98)
+
+    No SVG: transform="scale(-1,1) translate(-196, 0)"
+    OU: usar um <g> com transform="scale(-1,1)" e translate pelo width
+  -->
+  <svg
+    style="position:absolute; right:0; top:0; width:196px; height:677px;"
+    viewBox="0 0 196 677"
+    xmlns="http://www.w3.org/2000/svg"
+    overflow="visible">
+
+    <defs>
+      <linearGradient id="heroDotGradR" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#ffffff" stop-opacity="1.0"/>
+        <stop offset="50%"  stop-color="#9a9aad" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.0"/>
+      </linearGradient>
+      <filter id="heroDotGlowR" x="-200%" y="-50%" width="500%" height="200%">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+
+    <!-- Mirror horizontal: scale(-1,1) + translate para compensar -->
+    <g transform="translate(196,0) scale(-1,1)">
+
+      <!-- Rail escura -->
+      <path
+        d="M 2.5,0
+           L 2.5,272.34
+           C 2.5,279.28 6.09,285.72 12.0,289.36
+           L 168.0,385.64
+           C 173.91,389.28 177.5,395.72 177.5,402.66
+           L 177.5,677.5"
+        fill="none"
+        stroke="#1d1e36"
+        stroke-width="1"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+      <!-- Glow dot animado -->
+      <path
+        d="M 2.5,0
+           L 2.5,272.34
+           C 2.5,279.28 6.09,285.72 12.0,289.36
+           L 168.0,385.64
+           C 173.91,389.28 177.5,395.72 177.5,402.66
+           L 177.5,677.5"
+        fill="none"
+        stroke="url(#heroDotGradR)"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        filter="url(#heroDotGlowR)"
+        class="hero-glow-dot"/>
+
+    </g>
+  </svg>
+
+  <!-- Conteúdo central placeholder -->
+  <div style="position:relative; z-index:1; text-align:center;">
+    <div style="display:inline-block; background:#1d1e36; border:1px solid #333; padding:6px 14px; border-radius:20px; font-size:12px; color:#9a9aff; margin-bottom:20px;">AI Powered</div>
+    <h1 style="font-size:52px; font-weight:700; letter-spacing:-0.02em;">Hero Content</h1>
+    <p style="color:#6b6b8a; margin-top:10px;">As linhas S ficam nas bordas esquerda e direita</p>
+  </div>
+
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     DEMO 2 — SIMPLE SECTION CURVE (a principal)
+     Arquivo Lottie: simple-lottie (7.2 KB)
+     Canvas: 1440×881px
+     Comportamento: scroll-triggered, sem loop, 2s, ease-out
+
+     COMPOSIÇÃO VISUAL (bottom → top):
+       1. comp_1 / Vector 5  → Triângulo com gradient fill (#656ae1 → transparente)
+                               = A SOMBRA AZULADA abaixo da curva
+       2. comp_0 / Vector 2  → Rail escura (#1d1e36), stroke 9px, gradient opacity
+       3. comp_0 / Vector 6  → Linha índigo nítida (#656ae1), stroke 9px
+       4. comp_0 / Vector 7  → Mesma linha + Gaussian Blur 34px = O GLOW
+     ══════════════════════════════════════════════════════════════════ -->
+<section class="simple-section">
+  <div class="label">Demo 2 — Simple Section Curve + Glow + Shadow</div>
+
+  <svg
+    style="position:absolute; inset:0; width:100%; height:100%;"
+    viewBox="0 0 1440 881"
+    xmlns="http://www.w3.org/2000/svg"
+    preserveAspectRatio="xMidYMid slice">
+
+    <defs>
+
+      <!--
+        ════════════════════════════════════════════════════════
+        FILTRO DE GLOW — Gaussian Blur 34px
+        Extraído do efeito "Gaussian Blur" do layer Vector 7 no Lottie:
+          "ADBE Gaussian Blur 2-0001" → Blurriness: 34
+          "ADBE Gaussian Blur 2-0002" → Blur Dimensions: 1 (horizontal+vertical)
+
+        x/y/width/height ampliados para o blur não ser cortado
+        ════════════════════════════════════════════════════════
+      -->
+      <filter id="curveGlow34"
+              x="-30%" y="-30%"
+              width="160%" height="160%"
+              color-interpolation-filters="linearRGB">
+        <feGaussianBlur stdDeviation="34" result="blurred"/>
+      </filter>
+
+      <!--
+        ════════════════════════════════════════════════════════
+        GRADIENTE DO STROKE (Vectors 6 e 7 — índigo)
+
+        Extraído do Lottie:
+          "g.k": [0,0.396,0.416,0.882, 0.5,0.396,0.416,0.882, 1,0.396,0.416,0.882,
+                  0,0, 0.5,0.5, 1,1]
+
+        Formato: [pos, r, g, b, pos, r, g, b, ..., pos_alpha, alpha, ...]
+        3 color stops: todos #656ae1 (rgb 101,106,225)
+        3 alpha stops:
+          pos=0.0 → alpha=0.0  (transparente no início)
+          pos=0.5 → alpha=0.5  (semi-transparente no meio)
+          pos=1.0 → alpha=1.0  (totalmente opaco no fim)
+
+        Direção do gradiente (em userSpaceOnUse, espaço do canvas 1440×881):
+          s (start, em local space): [319.14, -336.25]
+          e (end,   em local space): [408.489, 387.218]
+          Layer position: [582.5, 442.75]
+          s_canvas = (319.14+582.5+262.5, -336.25+442.75+104.25) = (1164, 210.75)
+          e_canvas = (408.489+582.5+262.5, 387.218+442.75+104.25) = (1257.5, 934.2)
+
+        Resultado: gradiente quase VERTICAL, de cima (transparente) para baixo (opaco)
+        Isso faz a linha aparecer "saindo" da névoa no topo e ficando sólida embaixo
+        ════════════════════════════════════════════════════════
+      -->
+      <linearGradient id="indigoStroke"
+                      x1="1164" y1="210.75"
+                      x2="1257.5" y2="934.2"
+                      gradientUnits="userSpaceOnUse">
+        <stop offset="0%"   stop-color="#656ae1" stop-opacity="0.0"/>
+        <stop offset="50%"  stop-color="#656ae1" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="#656ae1" stop-opacity="1.0"/>
+      </linearGradient>
+
+      <!--
+        ════════════════════════════════════════════════════════
+        GRADIENTE DO RAIL ESCURA (Vector 2)
+
+        Mesma estrutura mas cor é #1d1e36:
+          "g.k": [0,0.114,0.118,0.212, 0.5,..., 1,..., 0,0, 0.5,0.5, 1,1]
+        ════════════════════════════════════════════════════════
+      -->
+      <linearGradient id="darkRail"
+                      x1="1164" y1="210.75"
+                      x2="1257.5" y2="934.2"
+                      gradientUnits="userSpaceOnUse">
+        <stop offset="0%"   stop-color="#1d1e36" stop-opacity="0.0"/>
+        <stop offset="50%"  stop-color="#1d1e36" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="#1d1e36" stop-opacity="1.0"/>
+      </linearGradient>
+
+      <!--
+        ════════════════════════════════════════════════════════
+        GRADIENTE DA SOMBRA TRIANGULAR (comp_1 / Vector 5)
+
+        Extraído do Lottie:
+          "g.k": [0,0.396,0.416,0.882, 0.5,0.396,0.416,0.882, 1,0.396,0.416,0.882,
+                  0,1, 0.5,0.5, 1,0]
+        Cor: sempre #656ae1
+        Alpha: pos=0 → 1.0,  pos=0.5 → 0.5,  pos=1.0 → 0.0
+
+        Direção (em local space do comp_1, convertido para canvas):
+          comp_1 offset = p - a = (852.635-417, 658-223.5) = (435.635, 434.5)
+          s_local = (811.866, -931.5) → s_canvas = (1247.5, -497.0)
+          e_local = (-469.134, -274.999) → e_canvas = (-33.5, 159.5)
+
+        Resultado: diagonal de CIMA-DIREITA (opaco) para BAIXO-ESQUERDA (transparente)
+        A região perto do topo da curva é totalmente índigo, some em direção à esquerda
+        ════════════════════════════════════════════════════════
+      -->
+      <linearGradient id="triangleShadow"
+                      x1="1247.5" y1="-497.0"
+                      x2="-33.5" y2="159.5"
+                      gradientUnits="userSpaceOnUse">
+        <stop offset="0%"   stop-color="#656ae1" stop-opacity="1.0"/>
+        <stop offset="50%"  stop-color="#656ae1" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="#656ae1" stop-opacity="0.0"/>
+      </linearGradient>
+
+    </defs>
+
+
+    <!--
+      ══════════════════════════════════════════════════════════
+      PATH DA CURVA (CÁLCULO COMPLETO)
+
+      Lottie: comp_0 layer position p=[582.5, 442.75], anchor a=[0,0]
+      comp_0 no canvas principal: p=[845, 547.25], a=[582.5, 443]
+      Offset total = (845-582.5 + 582.5, 547.25-443 + 442.75) = (845, 547)
+
+      Vértices (local space da curve layer):
+        v[0] = (-196.419, -336.25)
+        v[1] = (-173.307,   36.5 )
+        v[2] = ( 426.0,    336.25)
+
+      Em canvas (somar [845, 547]):
+        P0 = (845-196.419, 547-336.25) = (648.58, 210.75)
+        P1 = (845-173.307, 547+36.5  ) = (671.69, 583.5 )
+        P2 = (845+426,     547+336.25) = (1271.0, 883.25)
+
+      Tangentes (local → canvas, somando [845, 547]):
+        o[0] = (-412.874, 151.2 ) → CP1 = P0 + o[0] = (235.7, 361.95)
+        i[1] = (-205.902, -87.066) → CP2 = P1 + i[1] = (465.8, 496.43)
+        o[1] = ( 109.258,  46.2 ) → CP3 = P1 + o[1] = (780.9, 629.7 )
+        i[2] = (-104.007, -96.6 ) → CP4 = P2 + i[2] = (1167.0, 786.65)
+
+      SVG BEZIER FINAL:
+      M 648.58,210.75
+      C 235.71,361.95   465.79,496.43   671.69,583.5
+      C 780.95,629.7   1166.99,786.65  1271.0,883.25
+
+      NOTA IMPORTANTE:
+      CP1 (x=235) está FORA do canvas à esquerda (< 648).
+      Isso cria a curvatura ampla e dramática — o path "puxa" para esquerda
+      antes de voltar à direita. NÃO remova ou ajuste este controle!
+      ══════════════════════════════════════════════════════════
+    -->
+
+
+    <!--
+      ─── LAYER 1: TRIÂNGULO / SOMBRA AZULADA ──────────────────────────
+
+      comp_1 / Vector 5 — polígono fechado com gradient fill
+
+      Vértices (local space do comp_1, offset = 435.635, 434.5):
+        V0 = (-180.941, -74.25 ) → canvas (254.7, 360.25) [curva, ~meio]
+        V1 = ( 416.865,  223.5 ) → canvas (852.5, 658.0 ) [canto inf-dir]
+        V2 = (-416.865,  223.5 ) → canvas ( 18.8, 658.0 ) [canto inf-esq]
+        V3 = (-416.865, -223.5 ) → canvas ( 18.8, 211.0 ) [canto sup-esq]
+        V4 = (-362.635, -170.25) → canvas ( 73.0, 264.25) [borda sup]
+        V5 = (-284.635, -122.54) → canvas (151.0, 311.96) [borda sup]
+        V6 = (-379.634, -181.0 ) → canvas ( 56.0, 253.5 ) [borda sup]
+
+      Bezier V6→V0 (borda curva no topo seguindo a curva):
+        o[6] = (-26.029, -31.5) → CP = (56-26, 253.5-31.5) = (30.0, 222.0)
+        i[0] = (-205.902, -87.066) → CP = (254.7-205.9, 360.25-87.07) = (48.8, 273.18)
+
+      Bezier V0→V1 (seguindo aproximadamente a curva principal):
+        o[0] = (109.258, 46.2) → CP = (254.7+109.3, 360.25+46.2) = (364.0, 406.45)
+        i[1] = (-104.007, -96.6) → CP = (852.5-104.0, 658-96.6) = (748.5, 561.4)
+
+      V1→V2, V2→V3, V3→V4, V4→V5, V5→V6: linhas retas (i=o=[0,0])
+
+      O shape cobre a área abaixo e à esquerda da curva,
+      preenchida com o gradiente índigo diagonal.
+      Opacity total: 0.35–0.45 (ajuste visual)
+    -->
+    <path
+      d="M 254.7,360.25
+         C 364.0,406.45 748.5,561.4 852.5,658.0
+         L 18.8,658.0
+         L 18.8,211.0
+         L 73.0,264.25
+         L 151.0,311.96
+         L 56.0,253.5
+         C 30.0,222.0 48.8,273.18 254.7,360.25
+         Z"
+      fill="url(#triangleShadow)"
+      opacity="0.4"/>
+
+
+    <!--
+      ─── LAYER 2: RAIL ESCURA (fundo do path, sem animação) ──────────
+
+      Vector 2: mesmo path, stroke #1d1e36 com gradient opacity, 9px
+      Não tem TrimPaths: aparece completo desde o frame 0
+      (serve como o "trilho" sobre o qual a curva brilhante se desenha)
+    -->
+    <path
+      d="M 648.58,210.75
+         C 235.71,361.95 465.79,496.43 671.69,583.5
+         C 780.95,629.7 1166.99,786.65 1271.0,883.25"
+      fill="none"
+      stroke="url(#darkRail)"
+      stroke-width="9"
+      stroke-linecap="round"/>
+
+
+    <!--
+      ─── LAYER 3: LINHA ÍNDIGO NÍTIDA (animada, sem blur) ────────────
+
+      Vector 6: stroke #656ae1, 9px, gradient opacity 0→0.5→1
+      TrimPaths: end 0→100% em 120 frames (2s), easing cubic-bezier(0.6,0,1,1)
+
+      Implementação SVG:
+        stroke-dasharray = comprimento total do path ≈ 1600px (medido)
+        stroke-dashoffset: 1600→0 com a animação selfDraw
+    -->
+    <path
+      d="M 648.58,210.75
+         C 235.71,361.95 465.79,496.43 671.69,583.5
+         C 780.95,629.7 1166.99,786.65 1271.0,883.25"
+      fill="none"
+      stroke="url(#indigoStroke)"
+      stroke-width="9"
+      stroke-linecap="round"
+      class="curve-draw"/>
+
+
+    <!--
+      ─── LAYER 4: GLOW (blur 34px, cópia exata do Layer 3) ──────────
+
+      Vector 7: IDÊNTICO ao Vector 6, + efeito "Gaussian Blur 2" com
+      Blurriness=34, aplicado como SVG filter feGaussianBlur stdDeviation=34
+
+      Uma linha de 9px com blur de 34px cria uma aura de ~120px de largura.
+      Renderizada POR CIMA da linha nítida = halo difuso ao redor.
+
+      CRÍTICO: deve usar EXATAMENTE o mesmo path e animação do Layer 3.
+      Se o path diferir nem que seja 1px, o glow fica desalinhado.
+    -->
+    <path
+      d="M 648.58,210.75
+         C 235.71,361.95 465.79,496.43 671.69,583.5
+         C 780.95,629.7 1166.99,786.65 1271.0,883.25"
+      fill="none"
+      stroke="url(#indigoStroke)"
+      stroke-width="9"
+      stroke-linecap="round"
+      filter="url(#curveGlow34)"
+      class="curve-draw"/>
+
+  </svg>
+
+  <!-- Conteúdo placeholder da seção -->
+  <div style="position:absolute; bottom:60px; left:50%; transform:translateX(-50%); text-align:center; z-index:1;">
+    <p style="color:#6b6b8a; font-size:13px;">↑ Curva se desenha ao entrar na viewport (scroll-triggered no site original)</p>
+  </div>
+
+</section>
+
+
+<!--
+  ══════════════════════════════════════════════════════════════════════
+  RESUMO TÉCNICO PARA IMPLEMENTAÇÃO
+  ══════════════════════════════════════════════════════════════════════
+
+  SIMPLE CURVE — PARÂMETROS EXATOS:
+  ─────────────────────────────────
+  Canvas base:       1440 × 881 px
+  Path SVG:          M 648.58,210.75
+                     C 235.71,361.95 465.79,496.43 671.69,583.5
+                     C 780.95,629.7 1166.99,786.65 1271.0,883.25
+
+  Stroke width:      9px
+  Stroke linecap:    round
+
+  Cor:               #656ae1 (rgb 101,106,225)
+  Cor rail:          #1d1e36 (rgb 29,30,54)
+
+  Gradiente stroke:  linearGradient, quase vertical
+    start:           (1164, 210) — topo da curva
+    end:             (1257, 934) — abaixo do fundo
+    opacity 0→0.5→1 (transparente no topo, opaco embaixo)
+
+  Gaussian Blur:     stdDeviation="34" (feGaussianBlur no filter SVG)
+
+  Animação:          stroke-dasharray: 1600; stroke-dashoffset: 1600→0
+  Duração:           2s
+  Easing:            cubic-bezier(0.6, 0, 1, 1)   ← ease-out agressivo
+  Trigger:           scroll into view (IntersectionObserver)
+
+  Sombra triangular: gradient fill #656ae1 → transparent
+    direção:         diagonal upper-right (1247,-497) → lower-left (-33,159)
+    opacity total:   ~0.4
+
+  ─────────────────────────────────
+  HERO LINES — PARÂMETROS EXATOS:
+  ─────────────────────────────────
+  Canvas:            196 × 677 px (cada linha)
+  Path:              M 2.5,0 L 2.5,272.34
+                     C 2.5,279.28 6.09,285.72 12.0,289.36
+                     L 168.0,385.64
+                     C 173.91,389.28 177.5,395.72 177.5,402.66
+                     L 177.5,677.5
+
+  Rail stroke:       #1d1e36, 1px
+  Glow dot stroke:   white→gray→transparent, 2px, com blur(3px)
+
+  Dasharray:         102 578  (15% visible, 85% gap)
+  Animação:          dashoffset 0 → -680 em 3s, linear, infinite
+
+  Right line:        transform="translate(196,0) scale(-1,1)"
+
+  ══════════════════════════════════════════════════════════════════════
+-->
+
+</body>
+</html>
