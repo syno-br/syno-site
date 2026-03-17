@@ -2264,32 +2264,8 @@ window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY
     rootMargin: OFFSET,
   });
 
-  // Observa todos os elementos .fade-up na página, exceto #impactPhrase (observer próprio)
-  document.querySelectorAll('.fade-up').forEach(el => {
-    if (el.id !== 'impactPhrase') observer.observe(el);
-  });
-
-  // #impactPhrase — scroll listener direto, sem stagger, sem IntersectionObserver
-  // Mais confiável em mobile onde o IntersectionObserver tem comportamento inconsistente
-  (function () {
-    const el = document.getElementById('impactPhrase');
-    if (!el) return;
-    function tryReveal() {
-      if (!el.classList.contains('fade-up')) return; // já animou
-      const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight * 0.92) {
-        el.style.transitionDelay = '0s';
-        el.classList.add('is-visible');
-        setTimeout(() => {
-          el.style.transitionDelay = '';
-          el.classList.remove('fade-up', 'is-visible');
-        }, 900);
-        window.removeEventListener('scroll', tryReveal);
-      }
-    }
-    window.addEventListener('scroll', tryReveal, { passive: true });
-    tryReveal(); // verifica na carga caso já esteja visível
-  })();
+  // Observa todos os elementos .fade-up na página — incluindo #impactPhrase, igual aos cards
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 })();
 
 // ── SPOTLIGHT TRIGGER ───────────────────────
