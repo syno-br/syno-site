@@ -2225,7 +2225,7 @@ window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY
 (function () {
   // Delay progressivo entre elementos que entram no viewport ao mesmo tempo
   const STAGGER = 0.1;   // segundos entre elementos do mesmo grupo visível
-  const OFFSET  = '0px 0px -48px 0px'; // trigger levemente antes de sair da tela
+  const OFFSET  = '0px 0px 0px 0px'; // trigger ao entrar no viewport
 
   const observer = new IntersectionObserver((entries) => {
     // Filtra apenas os que estão a entrar agora (isIntersecting = true)
@@ -2598,6 +2598,7 @@ function switchTab(idx) {
   }
 
   window.addEventListener('mousemove', e => {
+    if (window.innerWidth <= 768) return; // static on mobile
     const heroEl = document.getElementById('heroSection');
     if (!heroEl) return;
     const rect = heroEl.getBoundingClientRect();
