@@ -1307,6 +1307,10 @@
     #journeyNeonLine { display: none; }
     .journey-h2-mob { display: none; }
 
+    /* ── MAC-ONLY: globo menor para caber o título em 2 linhas ── */
+    .is-mac .hero-globe-wrap { flex: 0 0 460px; }
+    .is-mac .globe-canvas    { width: 460px; height: 460px; }
+
     /* ── HERO STARS ── */
     .hero-stars {
       position: absolute;
@@ -2184,6 +2188,11 @@
 </footer>
 
 <script>
+// ── DETECT MACOS ────────────────────────────
+if (/Macintosh/.test(navigator.userAgent)) {
+  document.documentElement.classList.add('is-mac');
+}
+
 // ── NAV SCROLL ──────────────────────────────
 const nav = document.getElementById('mainNav');
 window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 20));
