@@ -89,7 +89,7 @@
       color: white; padding: 10px 22px; border-radius: 100px;
       font-weight: 600; font-size: 14px; letter-spacing: 0.01em;
       text-decoration: none; display: inline-block;
-      border: none; cursor: pointer;
+      border: none; cursor: pointer; touch-action: manipulation;
       box-shadow: 0 2px 16px rgba(124,58,237,0.35);
       transition: opacity .25s ease, transform .2s ease, box-shadow .25s ease;
     }
@@ -132,6 +132,7 @@
       background: var(--black);
       border: 1.5px solid rgba(255,255,255,0.14);
       border-radius: 100px;
+      touch-action: manipulation;
       padding: 5px 28px 5px 5px;
       text-decoration: none;
       color: white;
@@ -2206,6 +2207,14 @@
 // ── NAV SCROLL ──────────────────────────────
 const nav = document.getElementById('mainNav');
 window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 20));
+
+// ── REMOVE MOUSE HANDLERS EM TOUCH (evita 1º toque = hover, 2º = click) ──
+if (navigator.maxTouchPoints > 0) {
+  document.querySelectorAll('[onmouseover],[onmouseout]').forEach(function(el) {
+    el.removeAttribute('onmouseover');
+    el.removeAttribute('onmouseout');
+  });
+}
 
 // ── SCROLL RESTORE (mobile) ──────────────────────────────────
 (function(){
