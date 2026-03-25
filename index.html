@@ -2867,7 +2867,7 @@ function switchTab(idx) {
   }
 
   function loop() {
-    current += (target - current) * 0.10; // lerp suave 60fps
+    current += (target - current) * 0.28; // lerp responsivo 60fps
     fill.style.height = (current * 100).toFixed(2) + '%';
     requestAnimationFrame(loop);
   }
