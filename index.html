@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <script>if(/Macintosh/.test(navigator.userAgent))document.documentElement.classList.add('is-mac');</script>
+  <script>(function(){if(!navigator.maxTouchPoints)return;if('scrollRestoration'in history)history.scrollRestoration='manual';var y=+sessionStorage.getItem('syno_sy')||0;if(y>80)document.documentElement.classList.add('is-restoring');})();</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SYNO</title>
@@ -1341,6 +1342,8 @@
       .sol-glow-bg { display: none; }
     }
 
+    html.is-restoring { visibility: hidden; }
+
   </style>
 </head>
 <body>
@@ -2203,6 +2206,21 @@
 // ── NAV SCROLL ──────────────────────────────
 const nav = document.getElementById('mainNav');
 window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 20));
+
+// ── SCROLL RESTORE (mobile) ──────────────────────────────────
+(function(){
+  if(!navigator.maxTouchPoints) return;
+  window.addEventListener('scroll', function(){ sessionStorage.setItem('syno_sy', window.scrollY); }, { passive: true });
+  if(document.documentElement.classList.contains('is-restoring')){
+    var y = +sessionStorage.getItem('syno_sy') || 0;
+    window.scrollTo(0, y);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        document.documentElement.classList.remove('is-restoring');
+      });
+    });
+  }
+})();
 
 
 // ── FADE-UP — IntersectionObserver, stagger automático por grupo ────────
