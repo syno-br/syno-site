@@ -2608,10 +2608,10 @@ function switchTab(idx) {
 
   let prevWidth = 0;
   window.addEventListener('resize', () => {
-    resize();
-    // No iOS a barra de endereço escondendo/aparecendo dispara resize sem mudar a largura —
-    // reinicializar estrelas nesse caso causa "pulo" visual. Só reinicializa se largura mudou.
-    if (sc.offsetWidth !== prevWidth) { prevWidth = sc.offsetWidth; init(); if (isTouch) draw(); }
+    resize(); // limpa o canvas ao redefinir dimensões
+    if (sc.offsetWidth !== prevWidth) { prevWidth = sc.offsetWidth; init(); }
+    // Em touch, sempre redesenha após resize — o canvas foi limpo acima
+    if (isTouch) draw();
   });
   resize();
   prevWidth = sc.offsetWidth;
