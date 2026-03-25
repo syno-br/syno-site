@@ -1298,6 +1298,15 @@
 
       /* Frase de impacto — espaço acima igual ao de baixo */
       #impactPhrase { margin-top: 60px !important; }
+      /* Frase sempre visível no mobile — sem fade nem delay */
+      #impactPhrase, #impactPhrase > div,
+      #heroTagline, #heroTagline * {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        transition: none !important;
+        animation: none !important;
+      }
     }
 
     @media (max-width: 480px) {
@@ -1309,8 +1318,9 @@
     .journey-h2-mob { display: none; }
 
     /* ── MAC-ONLY: layout hero ajustado ── */
+    #mainNav .container { max-width: 100%; }
     .is-mac .hero-content    { padding-left: 0; padding-right: 0; margin-left: -24px; }
-    .is-mac .hero-globe-wrap { flex: 0 0 530px; padding-right: 0; margin-right: -16px; justify-content: flex-end; }
+    .is-mac .hero-globe-wrap { flex: 0 0 530px; padding-right: 0; margin-right: -40px; justify-content: flex-end; }
     .is-mac .globe-canvas    { width: 530px; height: 530px; }
 
     /* ── HERO STARS ── */
@@ -1558,7 +1568,7 @@
       <div style="pointer-events:none;position:absolute;top:-80px;left:0;width:500px;height:500px;background:radial-gradient(circle,rgba(124,58,237,0.12) 0%,transparent 70%);z-index:0;"></div>
 
       <!-- Coluna esquerda -->
-      <div id="visaoLeft" style="padding-left:80px;position:relative;z-index:1;">
+      <div id="visaoLeft" style="padding-left:72px;position:relative;z-index:1;">
 
         <!-- Label superior -->
         <div class="label" style="display:inline-flex;margin-bottom:20px;">Sobre a SYNO</div>
@@ -1971,7 +1981,7 @@
     <div id="faqGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;">
 
       <!-- Esquerda: título + descrição + CTA -->
-      <div id="faqLeft" class="fade-up" style="padding-left:110px;">
+      <div id="faqLeft" class="fade-up" style="padding-left:72px;">
         <h2 style="font-size:clamp(40px,4.8vw,64px);font-weight:700;letter-spacing:-1.8px;line-height:1.1;margin:0 0 24px;">
           Perguntas<br><span style="background:linear-gradient(to top,#4C1D95 0%,#A78BFA 50%,#ffffff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Frequentes</span>
         </h2>
@@ -2573,10 +2583,11 @@ function switchTab(idx) {
       ctx.fillStyle = `rgba(255,255,255,${s.a})`;
       ctx.fill();
     }
-    requestAnimationFrame(draw);
+    // Em touch, desenha uma vez e para — sem loop contínuo
+    if (!isTouch) requestAnimationFrame(draw);
   }
 
-  const isTouch = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const isTouch = !window.matchMedia('(hover: hover) and (pointer: fine)').matches || navigator.maxTouchPoints > 0;
 
   if (!isTouch) {
     window.addEventListener('mousemove', e => {
@@ -2589,10 +2600,9 @@ function switchTab(idx) {
   }
 
   function lerpOffset() {
-    if (!isTouch) {
-      offsetX += (mouseX - offsetX) * 0.06;
-      offsetY += (mouseY - offsetY) * 0.06;
-    }
+    if (isTouch) return; // Para o loop em touch
+    offsetX += (mouseX - offsetX) * 0.06;
+    offsetY += (mouseY - offsetY) * 0.06;
     setTimeout(lerpOffset, 16);
   }
 
@@ -2601,13 +2611,13 @@ function switchTab(idx) {
     resize();
     // No iOS a barra de endereço escondendo/aparecendo dispara resize sem mudar a largura —
     // reinicializar estrelas nesse caso causa "pulo" visual. Só reinicializa se largura mudou.
-    if (sc.offsetWidth !== prevWidth) { prevWidth = sc.offsetWidth; init(); }
+    if (sc.offsetWidth !== prevWidth) { prevWidth = sc.offsetWidth; init(); if (isTouch) draw(); }
   });
   resize();
   prevWidth = sc.offsetWidth;
   init();
   draw();
-  lerpOffset();
+  if (!isTouch) lerpOffset();
 })();
 
 // ── INTERACTIVE GLOBE ────────────────────────────────────────

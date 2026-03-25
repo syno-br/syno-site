@@ -29,27 +29,9 @@
       font-family: 'Inter Tight', sans-serif;
       font-size: 16px;
       line-height: 1.5;
-      cursor: none;
       min-height: 100vh;
     }
 
-    /* ── CURSOR ── */
-    .cursor-dot {
-      width: 8px; height: 8px;
-      background: var(--primary);
-      border-radius: 50%;
-      position: fixed; pointer-events: none;
-      z-index: 9999; transform: translate(-50%, -50%);
-    }
-    .cursor-ring {
-      width: 32px; height: 32px;
-      border: 1.5px solid rgba(124,58,237,0.6);
-      border-radius: 50%;
-      position: fixed; pointer-events: none;
-      z-index: 9998; transform: translate(-50%, -50%);
-      transition: width .3s ease, height .3s ease, border-color .3s ease;
-    }
-    .cursor-ring.hover { width: 52px; height: 52px; border-color: var(--primary); }
 
     /* ── TYPOGRAPHY ── */
     .gradient-text {
@@ -760,8 +742,6 @@
       .info-panel .info-divider { display: none !important; }
       .form-panel { padding: 40px 24px 100px; }
       .form-row { grid-template-columns: 1fr; }
-      body { cursor: auto; }
-      .cursor-dot, .cursor-ring { display: none; }
 
       /* ── Fixed bottom bar ── */
       .contact-bottom-bar {
@@ -814,9 +794,6 @@
 </head>
 <body>
 
-  <!-- Custom cursor -->
-  <div class="cursor-dot" id="cursorDot"></div>
-  <div class="cursor-ring" id="cursorRing"></div>
 
   <!-- ── SHAPES BACKGROUND ── -->
   <div class="shapes-bg" aria-hidden="true">
@@ -1185,32 +1162,6 @@
     }
 
 
-    // ── CURSOR ──────────────────────────────────────────────
-    (function () {
-      const dot  = document.getElementById('cursorDot');
-      const ring = document.getElementById('cursorRing');
-      if (!dot || !ring) return;
-
-      let rx = 0, ry = 0, mx = 0, my = 0;
-
-      document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-
-      function loop() {
-        dot.style.left  = mx + 'px';
-        dot.style.top   = my + 'px';
-        rx += (mx - rx) * 0.12;
-        ry += (my - ry) * 0.12;
-        ring.style.left = rx + 'px';
-        ring.style.top  = ry + 'px';
-        requestAnimationFrame(loop);
-      }
-      loop();
-
-      document.querySelectorAll('a, button, input, textarea, label').forEach(el => {
-        el.addEventListener('mouseenter', () => ring.classList.add('hover'));
-        el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
-      });
-    })();
 
     // ── FADE-UP ──────────────────────────────────────────────
     (function () {
@@ -1392,9 +1343,6 @@
             item.classList.add('selected');
             closePanel();
           });
-          // cursor hover
-          item.addEventListener('mouseenter', () => document.getElementById('cursorRing')?.classList.add('hover'));
-          item.addEventListener('mouseleave', () => document.getElementById('cursorRing')?.classList.remove('hover'));
         });
 
         document.addEventListener('click', (e) => {
