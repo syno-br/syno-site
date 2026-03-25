@@ -2213,7 +2213,7 @@ window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY
   window.addEventListener('scroll', function(){ sessionStorage.setItem('syno_sy', window.scrollY); }, { passive: true });
   if(document.documentElement.classList.contains('is-restoring')){
     var y = +sessionStorage.getItem('syno_sy') || 0;
-    window.scrollTo(0, y);
+    window.scrollTo({ top: y, behavior: 'instant' });
     requestAnimationFrame(function(){
       requestAnimationFrame(function(){
         document.documentElement.classList.remove('is-restoring');
