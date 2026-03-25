@@ -1213,7 +1213,7 @@
         background: linear-gradient(180deg, #C4B5FD 0%, #7C3AED 55%, #6D28D9 100%);
         border-radius: 2px;
         box-shadow: 0 0 8px rgba(167,85,247,0.9), 0 0 16px rgba(124,58,237,0.4);
-        transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        /* transição gerida por JS via rAF + lerp */
       }
       .jstop {
         position: relative !important;
@@ -2851,22 +2851,30 @@ function switchTab(idx) {
   const stops  = Array.from(document.querySelectorAll('.jstop'));
   if (!fill || !canvas || !stops.length) return;
 
-  function update() {
-    if (window.innerWidth > 768) return;
-    const trigger = window.innerHeight * 0.72; // recalcula a cada scroll
-    const cr      = canvas.getBoundingClientRect();
-    const progress = Math.max(0, Math.min(1, (trigger - cr.top) / cr.height));
-    fill.style.height = (progress * 100) + '%';
+  let current = 0;
+  let target  = 0;
+
+  function readScroll() {
+    const trigger = window.innerHeight * 0.72;
+    const cr = canvas.getBoundingClientRect();
+    target = Math.max(0, Math.min(1, (trigger - cr.top) / cr.height));
     stops.forEach(stop => {
-      const h3  = stop.querySelector('h3');
+      const h3 = stop.querySelector('h3');
       if (!h3) return;
       const mid = h3.getBoundingClientRect().top + h3.offsetHeight / 2;
       stop.classList.toggle('active', mid < trigger);
     });
   }
 
-  window.addEventListener('scroll', update, { passive: true });
-  update();
+  function loop() {
+    current += (target - current) * 0.10; // lerp suave 60fps
+    fill.style.height = (current * 100).toFixed(2) + '%';
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('scroll', readScroll, { passive: true });
+  readScroll();
+  loop();
 })();
 
 </script>
