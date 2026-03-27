@@ -1345,32 +1345,28 @@
 
     html.is-restoring { visibility: hidden; }
 
-    /* ── DESKTOP INTERMEDIÁRIO / iPAD LANDSCAPE (961–1400px, não-Mac) ──
-       Corrige layout em telas 1366px e similares sem afetar Mac nem mobile.
-       html:not(.is-mac) garante que o Mac (onde is-mac é adicionado no <html>)
-       nunca receba essas overrides.
+    /* ── DESKTOP INTERMEDIÁRIO / iPAD LANDSCAPE (não-Mac) ──
+       Dois blocos separados:
+       1) Seções (769–1400px): cobre escala Windows 100/125/150% → viewport 910–1366px
+       2) Hero (961–1400px): só quando hero está em 2-colunas; abaixo de 960px já é coluna
     ── */
+
+    /* Bloco 1 — cards, soluções, pilares, FAQ, visão */
+    @media (min-width: 769px) and (max-width: 1400px) {
+      html:not(.is-mac) #featRow1,
+      html:not(.is-mac) #featRow2  { padding: 0 32px !important; }
+      html:not(.is-mac) #solRow1   { padding: 0 32px !important; }
+      html:not(.is-mac) .pilares-grid { padding: 0 32px; }
+      html:not(.is-mac) #faqGrid   { gap: 48px !important; }
+      html:not(.is-mac) #visaoGrid { gap: 32px !important; }
+    }
+
+    /* Bloco 2 — hero (2-colunas, acima de 960px) */
     @media (min-width: 961px) and (max-width: 1400px) {
-      /* Hero: reduz globo e padding do conteúdo para dar mais espaço ao texto */
       html:not(.is-mac) .hero-globe-wrap { flex: 0 0 400px; padding-right: 16px; }
       html:not(.is-mac) .globe-canvas    { width: 400px; height: 400px; }
       html:not(.is-mac) .hero-content    { padding-left: 24px; padding-right: 16px; }
-
-      /* Tagline — permite quebra de linha em telas mais estreitas */
-      html:not(.is-mac) #heroTagline { white-space: normal !important; }
-
-      /* Features cards: reduz padding lateral (inline style usa !important) */
-      html:not(.is-mac) #featRow1,
-      html:not(.is-mac) #featRow2 { padding: 0 32px !important; }
-
-      /* Soluções: idem */
-      html:not(.is-mac) #solRow1 { padding: 0 32px !important; }
-
-      /* Pilares: reduz padding lateral */
-      html:not(.is-mac) .pilares-grid { padding: 0 32px; }
-
-      /* FAQ: reduz gap entre colunas */
-      html:not(.is-mac) #faqGrid { gap: 48px !important; }
+      html:not(.is-mac) #heroTagline     { white-space: normal !important; }
     }
 
   </style>
