@@ -1345,28 +1345,27 @@
 
     html.is-restoring { visibility: hidden; }
 
-    /* ── DESKTOP INTERMEDIÁRIO / iPAD LANDSCAPE (não-Mac) ──
-       Dois blocos separados:
-       1) Seções (769–1400px): cobre escala Windows 100/125/150% → viewport 910–1366px
-       2) Hero (961–1400px): só quando hero está em 2-colunas; abaixo de 960px já é coluna
+    /* ── DESKTOP INTERMEDIÁRIO / iPAD LANDSCAPE (769–1400px) ──
+       Seletores simples — o max-width:1400px já protege o Asus do usuário (~1920px).
+       Mac hero: .is-mac .hero-globe-wrap tem especificidade maior e sobrescreve o bloco 2.
+       Mobile (≤768px): fora do min-width:769px → intocado.
     ── */
 
-    /* Bloco 1 — cards, soluções, pilares, FAQ, visão */
+    /* Bloco 1 — seções: cards, soluções, pilares, FAQ, visão */
     @media (min-width: 769px) and (max-width: 1400px) {
-      html:not(.is-mac) #featRow1,
-      html:not(.is-mac) #featRow2  { padding: 0 32px !important; }
-      html:not(.is-mac) #solRow1   { padding: 0 32px !important; }
-      html:not(.is-mac) .pilares-grid { padding: 0 32px; }
-      html:not(.is-mac) #faqGrid   { gap: 48px !important; }
-      html:not(.is-mac) #visaoGrid { gap: 32px !important; }
+      #featRow1, #featRow2 { padding: 0 32px !important; }
+      #solRow1             { padding: 0 32px !important; }
+      .pilares-grid        { padding: 0 32px; }
+      #faqGrid             { gap: 48px !important; }
+      #visaoGrid           { gap: 32px !important; }
     }
 
-    /* Bloco 2 — hero (2-colunas, acima de 960px) */
+    /* Bloco 2 — hero (só quando em 2-colunas, acima de 960px) */
     @media (min-width: 961px) and (max-width: 1400px) {
-      html:not(.is-mac) .hero-globe-wrap { flex: 0 0 400px; padding-right: 16px; }
-      html:not(.is-mac) .globe-canvas    { width: 400px; height: 400px; }
-      html:not(.is-mac) .hero-content    { padding-left: 24px; padding-right: 16px; }
-      html:not(.is-mac) #heroTagline     { white-space: normal !important; }
+      .hero-globe-wrap { flex: 0 0 400px !important; padding-right: 16px !important; }
+      .globe-canvas    { width: 400px !important; height: 400px !important; }
+      .hero-content    { padding-left: 24px !important; padding-right: 16px !important; }
+      #heroTagline     { white-space: normal !important; }
     }
 
   </style>
