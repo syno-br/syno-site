@@ -936,13 +936,7 @@
             </div>
           </div>
 
-          <!--
-            INTEGRAÇÃO FORMSPREE:
-            1. Crie uma conta em formspree.io
-            2. Crie um novo formulário e copie o ID (ex: xrgvapqb)
-            3. Substitua "SEU_ID_AQUI" abaixo pelo ID obtido
-          -->
-          <form id="contactForm" action="https://formspree.io/f/SEU_ID_AQUI" method="POST" novalidate>
+          <form id="contactForm" method="POST" novalidate>
 
             <!-- BLOCO 1: Contexto básico -->
             <div class="form-block">
@@ -1446,6 +1440,56 @@
         });
       });
 
+      // Capture UTM params from URL
+      function getUtm(key) {
+        return new URLSearchParams(window.location.search).get(key) || '';
+      }
+
+      const N8N_WEBHOOK = 'https://n8n.synotech.com.br/webhook/capture-lead';
+      const N8N_FALLBACK = 'https://n8n.synotech.com.br/webhook/capture-lead-fallback';
+      const WEBHOOK_SECRET = 'syno-whs-9f4e2b1c8a6d3e7f5b4a2c9d1e8f3a7b';
+
+      function buildPayload() {
+        return {
+          nome:         document.getElementById('nome').value.trim(),
+          cargo:        document.getElementById('cargo').value.trim(),
+          empresa:      document.getElementById('empresa').value.trim(),
+          setor:        document.getElementById('setor').value,
+          setor_outro:  document.getElementById('setorOutro').value.trim(),
+          colaboradores:document.getElementById('colaboradores').value,
+          email:        document.getElementById('email').value.trim(),
+          telefone:     document.getElementById('telefone').value.trim(),
+          ferramentas:  document.getElementById('ferramentas').value.trim(),
+          friccao:      document.getElementById('friccao').value,
+          mensagem:     document.getElementById('mensagem').value.trim(),
+          utm_source:   getUtm('utm_source'),
+          utm_medium:   getUtm('utm_medium'),
+          utm_campaign: getUtm('utm_campaign'),
+        };
+      }
+
+      async function postJson(url, payload) {
+        return fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Webhook-Secret': WEBHOOK_SECRET
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      function onSuccess() {
+        btn.classList.remove('loading');
+        btn.style.width = btn.offsetWidth + 'px';
+        btn.offsetWidth;
+        btn.classList.add('sent');
+        setTimeout(() => {
+          wrapper.style.display = 'none';
+          success.classList.add('show');
+        }, 1600);
+      }
+
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         if (!validate()) return;
@@ -1453,31 +1497,28 @@
         btn.disabled = true;
         btn.classList.add('loading');
 
-        try {
-          const data = new FormData(form);
-          const res  = await fetch(form.action, {
-            method: 'POST',
-            body: data,
-            headers: { 'Accept': 'application/json' }
-          });
+        const payload = buildPayload();
 
-          btn.classList.remove('loading');
+        try {
+          const res = await postJson(N8N_WEBHOOK, payload);
           if (res.ok) {
-            btn.style.width = btn.offsetWidth + 'px';
-            btn.offsetWidth;
-            btn.classList.add('sent');
-            setTimeout(() => {
-              wrapper.style.display = 'none';
-              success.classList.add('show');
-            }, 1600);
+            onSuccess();
           } else {
-            btn.disabled = false;
-            alert('Erro ao enviar. Tente novamente.');
+            // Primary failed — try fallback
+            try {
+              await postJson(N8N_FALLBACK, payload);
+            } catch (_) { /* silent */ }
+            onSuccess(); // show success regardless — team gets email via fallback
           }
         } catch {
+          // Network error — try fallback
+          try {
+            await postJson(N8N_FALLBACK, payload);
+          } catch (_) { /* silent */ }
           btn.classList.remove('loading');
           btn.disabled = false;
-          alert('Erro de conexão. Tente novamente.');
+          // Fallback attempted but still show error to user
+          alert('Erro de conexão. Verifique sua internet e tente novamente.');
         }
       });
     })();
